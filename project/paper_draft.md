@@ -104,10 +104,10 @@ Together, $\mathcal{F}$ and $\Delta\Phi/{\rm cycle}$ provide complementary diagn
 
 ### A. NRSur7dq4
 
-NRSur7dq4~\cite{nrsur7dq4} is a fully precessing surrogate model trained on a dense grid of 1528 SpEC simulations at mass ratios $q = m_1/m_2 \in [1, 4]$ and spin magnitudes $|\boldsymbol{\chi}_{1,2}| \leq 0.8$. It provides all modes up to $\ell = 4$ (excluding $(5,5)$) as complex numpy arrays. The model accepts:
+NRSur7dq4~\cite{nrsur7dq4} is a fully precessing surrogate model trained on a dense grid of 1528 SpEC simulations at mass ratios $q = m_1/m_2 \in [1, 4]$ and spin magnitudes $|\boldsymbol{\chi}_{1,2}| \leq 0.8$. It provides all modes up to $\ell = 4$ (excluding $(5,5)$) as complex numpy arrays $h_{\ell m} = h_+ - i h_\times$ in dimensionless $rh/M$ units — the same spin-weight $-2$ spherical harmonic convention used by `WaveformModes.get_mode()`, so no convention conversion is required, only amplitude scaling and time rescaling. The model accepts:
 
 - **Mass ratio** $q = m_1/m_2 \geq 1$ (PyCBC / SpEC convention)
-- **Dimensionless spins** $\boldsymbol{\chi}_{1,2}$ at a reference time defaulting to $-4500\,M$ before merger
+- **Dimensionless spins** $\boldsymbol{\chi}_{1,2}$ evaluated at the reference epoch corresponding to $f_{\rm low}$; when $f_{\rm low}$ is passed as the NR relaxation frequency, the surrogate's spin reference epoch automatically aligns with the epoch at which NR spin components are extracted from the catalog metadata
 - **Starting frequency** $f_{\rm low}$ in "Mf" units: $f_{\rm low} = M_{\rm tot} \cdot f_{\rm GW}^{(22)} \cdot G M_\odot / c^3$
 - **Time step** $dt$ in dimensionless units $dt/M$
 
@@ -119,7 +119,7 @@ Source parameters are extracted from catalog metadata via `nrcatalogtools.Catalo
 
 $$f_{\rm lower} = \frac{M\Omega_{\rm NR}}{\pi \cdot M_{\rm tot} \cdot (G M_\odot / c^3)},$$
 
-which equals the $(2,2)$-mode gravitational-wave frequency at the NR relaxation time.
+which equals the $(2,2)$-mode gravitational-wave frequency at the NR relaxation time. This same value is passed as $f_{\rm low}$ to NRSur7dq4, which uses it both as the waveform start frequency and as the epoch at which the input spin components are defined. Because `nrcatalogtools` extracts spin components at the relaxation time, these two epochs are exactly consistent — no separate spin-epoch remapping is required.
 
 ### C. Mode Extraction and Scaling
 

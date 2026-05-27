@@ -80,10 +80,11 @@ NRSur7dq4
 
 **Critical subtleties:**
 
-- `NRSur7dq4` uses the SXS convention for `q = m1/m2 ≥ 1` and
-  dimensionless spin components at the *reference time* (default:
-  `-4500 M` before merger).  Use `f_ref = f_lower` for the NR simulation's
-  starting orbital frequency.
+- **Handling Precessing Spin Epochs**: The spins in `params` are extracted at the NR relaxation time (corresponding to `f_lower`). Because the spins precess over time, we must carefully align the evaluation epochs based on the relative lengths of the waveforms:
+  1. **NR is shorter than Surrogate (`f_lower_NR > f_min_surrogate`)**:
+     We can generate the full surrogate waveform by letting `f_low` default to its minimum (`f_low=None`), but we *must* explicitly set `f_ref = f_lower_NR`. The surrogate will correctly backward-evolve the spins from the NR epoch to its starting frequency.
+  2. **NR is longer than Surrogate (`f_lower_NR < f_min_surrogate`)**:
+     The surrogate cannot extrapolate backward before its minimum frequency (`~0.0171` dimensionless). We cannot pass the `params` spins to the surrogate because it will crash (`f_ref < f_low` error). Instead, we must set `f_low = None` (surrogate default min) and `f_ref = f_low_surrogate`, and we must **extract the instantaneous spins from the NR dynamics (e.g., `Horizons.h5` or `Spin*.asc`) at the time when the NR waveform reaches `f_min_surrogate`**. We cannot use the static `metadata.json` spins.
 - **Inertial frame output**: When called with `inclination=None`, the `gwsurrogate` evaluation of `NRSur7dq4` internally generates the modes in the co-orbital/co-precessing frame, and then rotates them to the **inertial (source) frame** before returning the mode dictionary. Therefore, the returned modes are already in the inertial frame of the surrogate, NOT the coprecessing frame. A direct mode-by-mode match (Step 1) evaluates these inertial modes without additional frame rotation.
 - `pycbc.filter.match()` maximises over time and phase simultaneously.  For
   the (ℓ,m) mode we use `f_lower_mode = f_lower * |m| / 2` (GW frequency
@@ -109,17 +110,26 @@ cat = nrcat.SXSCatalog.load(download=False)  # or RIT/MAYA
 wfm = cat.get(sim_name)
 params = wfm.get_parameters(total_mass=40.)   # PyCBC-native dict
 
-# --- Generate surrogate ---
+# --- Generate surrogate (Handle Epoch Mismatch) ---
 import gwsurrogate as gws
 sur = gws.LoadSurrogate('NRSur7dq4')
 q   = params['mass1'] / params['mass2']       # m1 >= m2
-chiA = [params['spin1x'], params['spin1y'], params['spin1z']]
-chiB = [params['spin2x'], params['spin2y'], params['spin2z']]
-t_sur, h_sur, dyn_sur = sur(q, chiA, chiB,
-                             M=40., dist_mpc=1.,
-                             dt=1./4096,
-                             f_low=params['f_lower'],
-                             mode_list=MODES)
+
+# Determine surrogate's minimum valid frequency (approx 0.0171 for q=2)
+# Here we represent the conditional logic for epochs
+if params['f_lower'] >= 0.018:  # NR is shorter (approximate bound)
+    chiA = [params['spin1x'], params['spin1y'], params['spin1z']]
+    chiB = [params['spin2x'], params['spin2y'], params['spin2z']]
+    f_low_sur = None            # Use surrogate's full length
+    f_ref_sur = params['f_lower']
+else:                           # NR is longer
+    # Extract spins at f_min_surrogate from NR dynamics!
+    chiA, chiB = extract_nr_spins_at_frequency(wfm, target_f=0.018)
+    f_low_sur = None
+    f_ref_sur = 0.018
+
+t_sur, h_sur, dyn_sur = sur(q, chiA, chiB, ellMax=4, 
+                            dt=dt_dimless, f_low=f_low_sur, f_ref=f_ref_sur)
 
 # --- PSD ---
 from pycbc.psd import from_string
