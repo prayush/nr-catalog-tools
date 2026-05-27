@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """Compare one NR simulation against NRSur7dq4 mode by mode.
 
-For each of the 6 available modes (NRSur7dq4 supports ell ≤ 4; the (5,5)
-mode is unavailable from the surrogate), this script:
+For each of the 7 NR modes (NRSur7dq4 supports ell ≤ 4; the (5,5)
+mode is unavailable from the surrogate and appears with match=N/A), this script:
 
 1. Loads the NR waveform from the requested catalog.
 2. Calls ``get_parameters()`` to extract intrinsic parameters.
@@ -61,7 +61,7 @@ sys.path.insert(0, os.path.join(_SCRIPTS_DIR, "..", ".."))
 from surrogate_utils import (
     generate_surrogate_modes,
     check_surrogate_prior,
-    SURROGATE_MODES,
+    NR_MODES,
 )
 from match_utils import compute_mode_match, compute_phase_diff_per_cycle, mode_f_lower
 from catalog_utils import load_catalog
@@ -187,7 +187,7 @@ def compare_sim_vs_surrogate(
     print("[5/6] Computing per-mode matches...")
     results = {}
 
-    for (ell, em) in SURROGATE_MODES:
+    for (ell, em) in NR_MODES:
         # NR mode in physical units
         try:
             h_nr_complex = wfm.get_mode(
@@ -414,10 +414,9 @@ def _plot(
 
     # ── Panel 3: match bar chart ──────────────────────────────────────────────
     ax = axes[2]
-    mode_labels = [f"({ell},{em:+d})" for (ell, em) in SURROGATE_MODES]
+    mode_labels = [f"({ell},{em:+d})" for (ell, em) in NR_MODES]
     match_vals = [
-        results.get((ell, em), {}).get("match", float("nan"))
-        for (ell, em) in SURROGATE_MODES
+        results.get((ell, em), {}).get("match", float("nan")) for (ell, em) in NR_MODES
     ]
 
     colors = [
@@ -484,7 +483,7 @@ def _print_table(results, sim_name):
         f"  {'Mode':<10} {'Match':>10}  {'ΔΦ/cycle [rad]':>16}  {'N_cycles':>10}  {'f_lower_mode':>14}"
     )
     print(f"{'─'*w}")
-    for (ell, em) in SURROGATE_MODES:
+    for (ell, em) in NR_MODES:
         res = results.get((ell, em), {})
         mm = res.get("match", float("nan"))
         fl = res.get("f_lower_mode", float("nan"))

@@ -8,14 +8,35 @@ NRSur7dq4 notes
 * Precessing model — takes full 3-vector spins, returns all modes up to ell=4.
 * The ``ellMax`` parameter caps the output (max is 4); ``mode_list`` is not
   supported for precessing models.
-* ``f_low`` argument is in dimensionless M·Ω units (orbital angular frequency),
-  **not** Hz.  Convert via ``Momega = π · f_lower_hz · M · MTSUN_SI``.
+* ``f_low`` controls waveform truncation only (start frequency); for NRSur7dq4
+  the recommended value is 0 (return the entire waveform).
+* ``f_ref`` sets the reference epoch at which the spins are defined; it is in
+  **cycles/M** (= M * f_GW where M is in seconds).  For the NR–surrogate
+  comparison the correct choice is ``f_ref = f_lower_NR * M_seconds``, which
+  aligns the surrogate spin epoch with the NR relaxation-time spin values.
 * ``dt`` argument is in dimensionless M units.
 * Output ``h[(ell,em)]`` is a complex numpy array representing the spin-weight
   -2 spherical harmonic mode ``h_lm`` (same convention as SXS/RIT/MAYA NR
   data: ``h_+ - i h_×`` decomposed as ``Σ h_lm Y_{-2,lm}``).
 * Time array ``t_sur`` is in dimensionless M units; ``t_sur[-1] ≈ +100 M``
   is near merger (peak amplitude).
+
+Spin epoch conventions (from implementation_plan.md §3.1)
+----------------------------------------------------------
+Two cases arise depending on whether the NR waveform starts before or after
+the surrogate's minimum training frequency (~0.0165 M·Ω_orbital):
+
+1. **NR shorter than surrogate** (``f_lower_NR > f_min_sur``):
+   Pass ``f_low=0`` (full waveform) and ``f_ref=f_lower_NR_dimless``.  The
+   surrogate backward-evolves the spins from the NR epoch to its start.
+
+2. **NR longer than surrogate** (``f_lower_NR < f_min_sur``):
+   The surrogate cannot extrapolate before its minimum frequency, so
+   ``f_ref`` is clipped to ``f_min_sur``.  For **aligned-spin or non-spinning
+   systems** the spin components are constant (no precession), so the metadata
+   spins remain valid regardless of epoch.  For **precessing systems** one
+   would need to extract the instantaneous spins from the NR dynamics at
+   ``f_min_sur`` — not yet implemented; a warning is emitted in that case.
 """
 
 from __future__ import annotations
@@ -51,6 +72,15 @@ def load_nrsur7dq4():
 
 # Modes available from NRSur7dq4 (ellMax ≤ 4; (5,5) is not available).
 SURROGATE_MODES = [(2, 2), (2, 1), (3, 3), (4, 4), (3, 2), (4, 3)]
+
+# Full set of NR modes to include in the comparison table.  Modes absent from
+# the surrogate (e.g. (5,5)) will appear with match=NaN in the output.
+NR_MODES = [(2, 2), (2, 1), (3, 3), (4, 4), (5, 5), (3, 2), (4, 3)]
+
+# Approximate surrogate minimum frequency in cycles/M (= M * f_GW in seconds).
+# Derived from the known NRSur7dq4 minimum M*Omega_orbital ≈ 0.0165:
+#   f_min_cycles_per_M = omega_min / pi ≈ 0.00525
+_SURROGATE_F_MIN_CYCLES_PER_M = 0.01717 / np.pi  # slightly above omega_0 ≈ 0.0165
 
 
 def generate_surrogate_modes(
@@ -100,35 +130,57 @@ def generate_surrogate_modes(
 
     m_secs = utils.time_to_physical(total_mass)  # M * MTSUN_SI  [seconds]
 
-    # Dimensionless surrogate arguments.
-    # gwsurrogate uses the "Mf" convention: f_low = M * f_GW where M is in
-    # seconds (M_total * MTSUN_SI) and f_GW is the gravitational-wave frequency
-    # in Hz.  f_lower_hz is the (2,2)-mode GW frequency, so f_low = m_secs * f_GW.
-    # (NOT pi * m_secs * f_GW — that would be M*Omega_orbital, which is wrong.)
-    f_low_sur = f_lower_hz * m_secs  # M * f_GW  (dimensionless Mf)
+    # f_ref in cycles/M (= M * f_GW_hz, where M is in seconds).
+    # This sets the reference epoch at which the spins (chiA, chiB) are defined,
+    # aligning the surrogate spin epoch with the NR relaxation-time spin epoch.
+    f_ref_dimless = f_lower_hz * m_secs  # cycles/M
     dt_dimless = delta_t_seconds / m_secs  # dimensionless time step
 
+    # Per gwsurrogate docs: for NRSur7dq4, f_low=0 is recommended (returns
+    # the full waveform; f_low only truncates output, not the model evaluation).
+    # f_ref sets the spin epoch and can be freely specified within the surrogate
+    # domain.  If f_ref falls below the surrogate's minimum domain frequency,
+    # clip it to the minimum (this occurs when the NR waveform is longer than
+    # the surrogate, i.e. f_lower_NR < f_min_sur at the chosen total mass).
     sur = load_nrsur7dq4()
+
+    # Check whether the system is precessing (non-zero in-plane spins).
+    chi1_perp = np.sqrt(chiA[0] ** 2 + chiA[1] ** 2)
+    chi2_perp = np.sqrt(chiB[0] ** 2 + chiB[1] ** 2)
+    is_precessing = (chi1_perp > 1e-4) or (chi2_perp > 1e-4)
+
     try:
-        t_sur, h_sur, _ = sur(q, chiA, chiB, ellMax=4, dt=dt_dimless, f_low=f_low_sur)
+        t_sur, h_sur, _ = sur(
+            q, chiA, chiB, ellMax=4, dt=dt_dimless, f_low=0, f_ref=f_ref_dimless
+        )
     except Exception as exc:
-        # f_low_sur may be below the surrogate's minimum starting orbital frequency
-        # (NRSur7dq4 is limited to the extent of its training waveforms, ~4500 M).
-        # Parse omega_min from the error message, convert to Mf, and retry.
-        # Error format: "Got omega_ref = X < Y = omega_0, too small!"
-        if "too small" in str(exc).lower() or "omega_ref" in str(exc):
+        # f_ref may be below the surrogate's minimum domain (NR longer than
+        # surrogate).  Parse omega_min, convert to cycles/M, and clip.
+        err_str = str(exc)
+        if (
+            "too small" in err_str.lower()
+            or "omega_ref" in err_str
+            or "omega_0" in err_str
+        ):
             import re
 
-            # Error format: "Got omega_ref = X < Y = omega_0, too small!"
-            # We need Y (the minimum), which appears as "Y = omega_0".
-            m = re.search(r"([0-9.]+)\s*=\s*omega_0", str(exc))
-            if m:
-                omega_min = float(m.group(1)) * 1.01  # 1 % above minimum
+            m_match = re.search(r"([0-9.]+)\s*=\s*omega_0", err_str)
+            if m_match:
+                omega_min = float(m_match.group(1)) * 1.01  # 1% above minimum
             else:
-                omega_min = 0.0170  # safe fallback above known NRSur7dq4 bound
-            f_low_clipped = omega_min / np.pi  # Mf = omega_orbital / pi
+                omega_min = 0.0170  # safe fallback
+            f_ref_clipped = omega_min / np.pi  # cycles/M = omega_orbital / pi
+
+            if is_precessing:
+                print(
+                    f"      WARNING: f_ref={f_ref_dimless:.5f} cycles/M is below "
+                    f"surrogate minimum; clipping to {f_ref_clipped:.5f}.  "
+                    "For precessing systems the NR spins should be extracted from "
+                    "NR dynamics at f_min_sur — using metadata spins instead "
+                    "(may introduce a spin-epoch error)."
+                )
             t_sur, h_sur, _ = sur(
-                q, chiA, chiB, ellMax=4, dt=dt_dimless, f_low=f_low_clipped
+                q, chiA, chiB, ellMax=4, dt=dt_dimless, f_low=0, f_ref=f_ref_clipped
             )
         else:
             raise
