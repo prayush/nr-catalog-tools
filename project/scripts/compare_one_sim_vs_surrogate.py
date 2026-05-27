@@ -386,17 +386,29 @@ def _plot(
 
     # ── Panel 2: (2,2) real part near merger ─────────────────────────────────
     ax = axes[1]
+    h22_sur_aligned = None
     try:
         t_nr_full = np.array(h22_nr.sample_times)
         re_nr = np.array(h22_nr.real())
         mask = t_nr_full >= -0.25  # last 250 ms
         ax.plot(t_nr_full[mask], re_nr[mask], color="C0", lw=1.2, label="NR")
+
+        if (2, 2) in h_sur:
+            idx_nr_peak = np.argmax(np.abs(np.array(h22_nr)))
+            idx_sur_peak = np.argmax(np.abs(np.array(h22_sur)))
+            phase_nr_peak = np.angle(h22_nr[idx_nr_peak])
+            phase_sur_peak = np.angle(h22_sur[idx_sur_peak])
+            delta_phase = phase_nr_peak - phase_sur_peak
+            h22_sur_aligned = h22_sur * np.exp(1j * delta_phase)
     except Exception:
         pass
 
     if (2, 2) in h_sur:
         t_sur_full = np.array(h22_sur.sample_times)
-        re_sur = np.array(h22_sur.real())
+        if h22_sur_aligned is not None:
+            re_sur = np.array(h22_sur_aligned.real())
+        else:
+            re_sur = np.array(h22_sur.real())
         mask = t_sur_full >= -0.25
         ax.plot(
             t_sur_full[mask],
@@ -404,7 +416,7 @@ def _plot(
             color="C1",
             lw=1.2,
             ls="--",
-            label="NRSur7dq4",
+            label="NRSur7dq4 (phase-aligned)",
         )
 
     ax.set_xlabel("t - t_peak [s]")
