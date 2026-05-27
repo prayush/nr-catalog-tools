@@ -71,9 +71,8 @@ NR simulation
                  └─ pycbc.TimeSeries (complex, physical units)
 
 NRSur7dq4
-  └─ sur(q, chiA, chiB, M=40, dt=1./4096, f_low=f_lower,
-         mode_list=[(2,2),(2,1),...])
-       └─ dict {(ell,em): (h_plus, h_cross)} in dimensionless units
+  └─ sur(q, chiA, chiB, ellMax=4, dt=dt_dimless, f_low=f_low_sur)
+       └─ dict {(ell,em): h_lm (complex array)} in dimensionless units
   └─ rescale t_sur → physical:  t_sur * M * lal.MTSUN_SI
   └─ rescale h_sur → physical:  h_sur * G*M*Msun / (c²*D*Mpc)
   └─ wrap each mode as pycbc.TimeSeries
@@ -291,21 +290,11 @@ Produce the figures for the paper:
 
 ## Open Questions
 
-> [!IMPORTANT]
-> **Surrogate mode ordering**: `gwsurrogate` returns modes as
-> `h_sur[(ell,em)] = (h_plus, h_cross)` in *dimensionless* `r*h/M` units.
-> The NR modes are stored as complex `h_lm = h_+ - i h_×` in dimensionless
-> units and need careful sign/convention alignment before computing overlaps.
-> Confirm the convention used by `gwsurrogate.NRSur7dq4` vs
-> `WaveformModes.get_mode()`.
+> [!NOTE]
+> **Surrogate mode convention**: Both `gwsurrogate` and `WaveformModes.get_mode()` return modes as complex arrays `h_lm = h_+ - i h_×` (spin-weight -2 spherical harmonics) in dimensionless `r*h/M` units. This has been verified, so no complex convention conversion is needed—just amplitude scaling and time conversion.
 
-> [!IMPORTANT]
-> **Reference frequency for surrogate**: `NRSur7dq4` defaults to
-> `f_ref = -4500 M` as the reference epoch.  For spinning/precessing systems,
-> the spin components extracted from NR metadata correspond to a *different*
-> epoch (the relaxation time or reference time in the SXS sense).  We need to
-> map the NR reference time to the surrogate reference time, or use a
-> consistent `f_ref` across both.
+> [!NOTE]
+> **Reference frequency alignment**: The `NRSur7dq4` evaluator defaults `f_ref` to `f_low`. The `nrcatalogtools` library correctly computes `f_lower` as the instantaneous frequency of the (2,2) mode at the NR simulation's relaxation time. Since this frequency is passed as `f_low` to the surrogate, the surrogate's reference epoch for spin definition perfectly aligns with the NR spin extraction epoch.
 
 > [!NOTE]
 > **NRSur7dq4 coverage**: The surrogate covers q ∈ [1,4], |χ| ≤ 0.8,
