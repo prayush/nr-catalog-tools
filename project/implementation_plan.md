@@ -25,6 +25,122 @@ subsequent step builds on it.
 
 ---
 
+## Simulation Classification
+
+All simulations in the three catalogs are pre-classified into six mutually
+exclusive categories based on spin morphology and orbital eccentricity.
+The classification is implemented in
+`nrcatalogtools/classification.py` (`NRCatalogClassifier`) and the results
+are persisted as JSON files in `catalog_organization/`.
+
+### Six categories
+
+| Key | Full name | Spin condition | Eccentricity condition |
+|---|---|---|---|
+| **a** | non-spinning eccentric | $\|\boldsymbol{\chi}_{1,2}\| < \epsilon_\chi$ | $e \geq \epsilon_e$ |
+| **b** | non-spinning non-eccentric | $\|\boldsymbol{\chi}_{1,2}\| < \epsilon_\chi$ | $e < \epsilon_e$ |
+| **c** | aligned-spin eccentric | $\chi_\perp < \epsilon_\chi$, $|\chi_z| \geq \epsilon_\chi$ | $e \geq \epsilon_e$ |
+| **d** | aligned-spin non-eccentric | $\chi_\perp < \epsilon_\chi$, $|\chi_z| \geq \epsilon_\chi$ | $e < \epsilon_e$ |
+| **e** | precessing-spin eccentric | $\chi_\perp \geq \epsilon_\chi$ | $e \geq \epsilon_e$ |
+| **f** | precessing-spin non-eccentric | $\chi_\perp \geq \epsilon_\chi$ | $e < \epsilon_e$ |
+
+where $\chi_\perp^2 = \chi_x^2 + \chi_y^2$ is the in-plane spin magnitude for
+either body.
+
+### Thresholds
+
+```python
+spin_threshold  ε_χ = 0.001   # |component| below this → treated as zero
+ecc_threshold   ε_e = 0.005   # eccentricity below this → treated as circular
+```
+
+These are the defaults in `NRCatalogClassifier.__init__()`.  They can be
+overridden at instantiation time to explore threshold sensitivity.
+
+### Metadata field mapping per catalog
+
+The classifier reads different metadata keys depending on the catalog,
+since each code stores spin and eccentricity information under distinct names:
+
+| Quantity | SXS key | RIT key (preferred / fallback) | MAYA key |
+|---|---|---|---|
+| Eccentricity | `reference_eccentricity` | `eccentricity` | `eccentricity` |
+| $\chi_{1x}$ | `reference_dimensionless_spin1[0]` | `relaxed-chi1x` / `initial-bh-chi1x` | `a1x` |
+| $\chi_{1y}$ | `reference_dimensionless_spin1[1]` | `relaxed-chi1y` / `initial-bh-chi1y` | `a1y` |
+| $\chi_{1z}$ | `reference_dimensionless_spin1[2]` | `relaxed-chi1z` / `initial-bh-chi1z` | `a1z` |
+| $\chi_{2x}$ | `reference_dimensionless_spin2[0]` | `relaxed-chi2x` / `initial-bh-chi2x` | `a2x` |
+| $\chi_{2y}$ | `reference_dimensionless_spin2[1]` | `relaxed-chi2y` / `initial-bh-chi2y` | `a2y` |
+| $\chi_{2z}$ | `reference_dimensionless_spin2[2]` | `relaxed-chi2z` / `initial-bh-chi2z` | `a2z` |
+
+For SXS, spin vectors are extracted at the **relaxation time** (the same epoch
+as `f_lower`).  For RIT, the `relaxed-*` fields are preferred over
+`initial-bh-*` fields because they correspond to a post-junk-radiation epoch.
+Eccentricity strings of the form `"< 0.002"` or `"~0.01"` are cleaned by
+stripping the `<` and `~` characters before conversion to float; `None` or
+`NaN` values are treated as zero.
+
+### Catalog counts by category
+
+| Category | SXS | RIT | MAYA | **All** |
+|---|---:|---:|---:|---:|
+| (a) non-spinning eccentric | 206 | 499 | 74 | **779** |
+| (b) non-spinning non-eccentric | 177 | 54 | 34 | **265** |
+| (c) aligned-spin eccentric | 21 | 231 | 117 | **369** |
+| (d) aligned-spin non-eccentric | 687 | 541 | 40 | **1,268** |
+| (e) precessing-spin eccentric | 30 | 117 | 303 | **450** |
+| (f) precessing-spin non-eccentric | 3,043 | 437 | 67 | **3,547** |
+| **Total** | **4,164** | **1,879** | **635** | **6,678** |
+
+Notable catalog-level differences:
+- **SXS** is dominated by precessing quasi-circular (f): 73% of all SXS sims.
+  Only 6% are eccentric.
+- **RIT** has a large eccentric population: 45% eccentric overall, with
+  non-spinning eccentric (a) as its single largest category (499 sims).
+- **MAYA** is the most eccentricity-focused: 78% eccentric.  Its largest
+  single category is precessing-spin eccentric (e) at 303 sims (48% of MAYA).
+
+### NRSur7dq4 calibration sub-classification (SXS only)
+
+The surrogate was trained on 1,731 SXS simulations, all quasi-circular
+(categories b, d, f).  The JSON file `catalog_organization/sxs_classification.json`
+stores an additional `nrsur7dq4_calibration` boolean per simulation and
+provides `nrsur_calibration_count` per category:
+
+| SXS category | Total | NRSur7dq4 training |
+|---|---:|---:|
+| (b) non-spinning non-eccentric | 177 | 60 |
+| (d) aligned-spin non-eccentric | 687 | 282 |
+| (f) precessing-spin non-eccentric | 3,043 | 1,389 |
+| **Total** | **3,907** | **1,731** |
+
+Eccentric categories (a, c, e) have zero calibration sims by construction —
+NRSur7dq4 does not model eccentricity.
+
+The `NRCatalogClassifier.get_simulations()` method accepts an
+`only_nrsur_calibration=True` flag to restrict to training-set sims (SXS only).
+
+### Accessing classifications in code
+
+```python
+from nrcatalogtools.classification import NRCatalogClassifier
+
+clf = NRCatalogClassifier(spin_threshold=0.001, ecc_threshold=0.005)
+
+# All aligned-spin quasi-circular SXS sims
+sims_d_sxs = clf.get_simulations('SXS', 'd')
+# or equivalently:
+sims_d_sxs = clf.get_simulations('SXS', 'aligned-spin non-eccentric')
+
+# Only SXS calibration sims in category (d)
+sims_d_cal = clf.get_simulations('SXS', 'd', only_nrsur_calibration=True)
+
+# All RIT non-spinning (both eccentric and quasi-circular)
+sims_a_rit = clf.get_simulations('RIT', 'a')
+sims_b_rit = clf.get_simulations('RIT', 'b')
+```
+
+---
+
 ## Existing infrastructure (already in `nrcatalogtools`)
 
 | Component | Location | Key method/function |
@@ -174,12 +290,145 @@ for (ell, em) in MODES:
 
 ---
 
-## Step 2 — SO(3) frame-rotation optimized match
+## Step 2 — Batch comparison: non-spinning and aligned-spin catalogs (categories a–d)
 
 ### Goal
-Extend Step 1 to maximize the match not just over time/phase but over the full
-SO(3) source-frame rotation, implementing the formalism in
-`docs/goal.md §Source frame ambiguity`.
+
+Apply the Step 1 infrastructure in batch mode to **all** simulations in the
+SXS, RIT, and MAYA catalogs belonging to the non-spinning (a, b) and
+aligned-spin (c, d) categories (both quasi-circular and eccentric variants),
+filtered to lie within the NRSur7dq4 prior volume ($q \in [1,4]$,
+$|\chi_{1,2}| \leq 0.8$).
+
+### Rationale — why categories a–d, and why no SO(3) optimization yet
+
+For non-spinning and aligned-spin systems the spin vectors are always parallel
+(or anti-parallel, or zero) to the orbital angular momentum $\hat{L}$; they
+carry no in-plane ($\chi_\perp = 0$) components and do not precess.
+Consequently:
+
+1. **z-axis alignment is guaranteed.** Both the NR simulation and NRSur7dq4
+   define their source-frame z-axis as $\hat{L}$ evaluated at the reference
+   epoch. For aligned/non-spinning binaries this axis is fixed throughout the
+   evolution, so the two frames agree up to a rotation by some angle $\phi_0$
+   about $z$.
+2. **Rotation about $z$ ≡ overall phase shift.** A rotation $R_z(\phi_0)$
+   transforms mode $h_{\ell m} \to e^{-im\phi_0} h_{\ell m}$, which is
+   exactly the coalescence-phase degree of freedom already maximized over by
+   `pycbc.filter.match()`. No additional SO(3) optimization step is needed.
+3. **Clean, unambiguous matches.** Any residual mismatch after time+phase
+   maximization reflects genuine waveform differences — numerical errors in the
+   NR codes or surrogate interpolation error — free from frame-convention
+   artifacts. This makes categories a–d the ideal first batch to establish
+   cross-catalog accuracy baselines.
+4. **Eccentric sims as a negative control.** Categories (a) and (c) contain
+   eccentric orbits. NRSur7dq4 is trained on quasi-circular orbits, so matches
+   for these are expected to be substantially lower. Including them in the same
+   batch provides a built-in negative control: the pipeline should automatically
+   return low matches for eccentric configurations, confirming it is sensitive
+   to physical differences and not just returning 1 by default.
+
+### Scope
+
+From the classification data (`catalog_organization/`):
+
+| Category | SXS | RIT | MAYA | Total |
+|---|---:|---:|---:|---:|
+| (a) non-spinning eccentric | 206 | 499 | 74 | 779 |
+| (b) non-spinning non-eccentric | 177 | 54 | 34 | 265 |
+| (c) aligned-spin eccentric | 21 | 231 | 117 | 369 |
+| (d) aligned-spin non-eccentric | 687 | 541 | 40 | 1,268 |
+| **Total (a–d)** | **1,091** | **1,325** | **265** | **2,681** |
+
+After filtering by the NRSur7dq4 prior cuts and excluding simulations where
+metadata retrieval fails, we expect roughly **400–700** processable
+simulations.
+
+### Design
+
+#### 2.1 Simulation selection
+
+Use `NRCatalogClassifier` to enumerate the target simulations, then filter
+by the surrogate prior:
+
+```python
+from nrcatalogtools.classification import NRCatalogClassifier
+from project.scripts.catalog_utils import load_catalog
+from project.scripts.surrogate_utils import check_surrogate_prior
+
+TARGET_CATEGORIES = [
+    'non-spinning eccentric',       # a
+    'non-spinning non-eccentric',   # b
+    'aligned-spin eccentric',       # c
+    'aligned-spin non-eccentric',   # d
+]
+
+clf = NRCatalogClassifier(spin_threshold=0.001, ecc_threshold=0.005)
+
+sims_to_run = {}  # {catalog_name: [sim_name, ...]}
+for catalog_name in ['SXS', 'RIT', 'MAYA']:
+    clf.classify_all(catalog_name)
+    candidates = []
+    for cat in TARGET_CATEGORIES:
+        candidates.extend(clf.get_simulations(catalog_name, cat))
+
+    cat_obj = load_catalog(catalog_name)
+    passing = []
+    for sim in candidates:
+        try:
+            params = cat_obj.get_parameters(sim, total_mass=40.)
+        except Exception:
+            continue
+        if check_surrogate_prior(params):
+            passing.append(sim)
+    sims_to_run[catalog_name] = passing
+```
+
+#### 2.2 Processing loop
+
+For each `(catalog_name, sim_name)` pair call the existing
+`compare_sim_vs_surrogate()` function from `compare_one_sim_vs_surrogate.py`
+with `rotate=False` at the reference total mass $M = 40\,M_\odot$.
+Accumulate results into per-catalog CSV files and a merged all-catalogs CSV.
+An optional `--mass-scan` flag triggers `mass_scan.py`'s per-simulation mass
+grid for a random 10% subsample of category (b) and (d) simulations.
+
+#### 2.3 Parallelization
+
+Use `multiprocessing.Pool` with one worker per simulation. Each worker
+independently instantiates its own catalog and surrogate (gwsurrogate loads
+a model-file singleton per process). Pool size defaults to
+`min(os.cpu_count(), 8)`. A `tqdm`-based progress bar tracks completion.
+
+#### 2.4 Output
+
+- `results/batch_aligned_sxs.csv` — per-mode matches for all processed SXS
+  simulations in categories a–d
+- `results/batch_aligned_rit.csv` — same for RIT
+- `results/batch_aligned_maya.csv` — same for MAYA
+- `results/batch_aligned_all.csv` — merged cross-catalog table
+- **Figure A**: 2×3 panel grid of $\log_{10}(1 - \mathcal{F}_{22})$ vs $q$
+  and $\chi_{\rm eff}$ per catalog, points color-coded by sub-category (a/b/c/d)
+- **Figure B**: Per-mode match CDFs for categories (b) and (d) across catalogs,
+  to compare quasi-circular performance between SXS, RIT, and MAYA
+
+### New files
+
+| File | Purpose |
+|---|---|
+| `scripts/batch_aligned_catalogs.py` | Main batch loop for categories a–d |
+
+---
+
+## Step 3 — SO(3) frame-rotation optimized match
+
+### Goal
+Extend the per-simulation comparison to maximize the match not just over
+time/phase but over the full SO(3) source-frame rotation, implementing the
+formalism in `docs/goal.md §Source frame ambiguity`. This step is necessary
+for precessing-spin systems (categories e and f) where the in-plane spin
+components introduce a non-trivial rotation between the NR simulation frame
+and the surrogate frame.
 
 ### Design
 
@@ -201,16 +450,16 @@ two `WaveformModes` objects.
 
 | File | Purpose |
 |---|---|
-| `scripts/compare_one_sim_rotation_optimized.py` | Step 2 script |
+| `scripts/compare_one_sim_rotation_optimized.py` | Step 3 script |
 | `nrcatalogtools/waveform/surrogate_wrapper.py` | Wrap surrogate dict → WaveformModes |
 
 ---
 
-## Step 3 — Batch processing over full catalogs
+## Step 4 — Batch processing over full catalogs (all categories)
 
 ### Goal
-Run Steps 1 and 2 over **all** simulations in each catalog that fall within
-the `NRSur7dq4` prior volume:
+Run Steps 1/2 and 3 over **all** simulations in each catalog that fall within
+the `NRSur7dq4` prior volume, including the precessing-spin categories (e, f):
 
 - `q ∈ [1, 4]`
 - `|χ₁|, |χ₂| ≤ 0.8`
@@ -224,7 +473,9 @@ for catalog in [SXS, RIT, MAYA]:
         params = catalog.get_parameters(sim, total_mass=40.)
         if not in_surrogate_prior(params): continue
         result = compute_mode_matches(catalog, sim, params)
-        append_to_hdf5(results_file, sim, catalog, result)
+        if result.category in ['e', 'f']:
+            result_rot = compute_rotation_optimized_match(catalog, sim, params)
+        append_to_hdf5(results_file, sim, catalog, result, result_rot)
 ```
 
 Use `multiprocessing.Pool` for embarrassingly parallel execution.
@@ -238,7 +489,7 @@ Use `multiprocessing.Pool` for embarrassingly parallel execution.
 
 ---
 
-## Step 4 — BMS supertranslation correction and analysis
+## Step 5 — BMS supertranslation correction and analysis
 
 ### Goal
 For the subset of simulations where the SO(3)-optimized match is below a
@@ -255,7 +506,7 @@ improvement.  This isolates gauge artifacts from genuine numerical errors.
 
 ---
 
-## Step 5 — Visualization and scientific analysis
+## Step 6 — Visualization and scientific analysis
 
 ### Goal
 Produce the figures for the paper:
@@ -286,13 +537,23 @@ Produce the figures for the paper:
   cutoffs for each mode.
 
 ### Step 2 verification
+- SXS category (b) non-spinning non-eccentric, NRSur7dq4 calibration sims
+  (60 simulations): expect $\mathcal{F}_{22} > 0.99$ for the large majority.
+- RIT/MAYA category (b): expect $\mathcal{F}_{22} > 0.99$ if codes are
+  accurate, with any systematic offset revealing catalog-level numerical errors.
+- Category (a) and (c) eccentric sims: expect noticeably lower matches
+  ($< 0.95$), confirming the pipeline correctly penalizes eccentricity mismatch.
+- Consistency check: Step 2 results for the four pilot SXS simulations should
+  reproduce the Step 1 results within floating-point precision.
+
+### Step 3 verification
 - For a q=1 non-spinning system, the optimal rotation R* should be very close
   to identity (or a known symmetry rotation π about z).
 - Compare `match_sphere_averaged` result with Step 1 result; rotation
   optimization should improve or maintain the match.
 
-### Step 3 verification
-- Spot-check a few simulations from Step 1 to confirm batch results agree.
+### Step 4 verification
+- Spot-check a few simulations from Steps 1 and 2 to confirm batch results agree.
 - Check that the number of simulations processed matches the expected prior
   volume.
 
@@ -323,12 +584,10 @@ Produce the figures for the paper:
 
 ## Immediate Next Action
 
-→ **Implement Step 1**: `scripts/compare_one_sim_vs_surrogate.py`
+→ **Step 1 is complete.** Pilot results exist for four SXS simulations
+  (SXS:BBH:0001, 0005, 0169, 0162) at $M = 40\,M_\odot$.
 
-Please confirm:
-1. Which catalog/simulation to use as the default test case?
-   (Suggestion: `SXS:BBH:0001` for non-spinning, or a spinning RIT sim)
-2. Should the script also include an optional SO(3) rotation flag `--rotate`
-   to run Step 2 inline?
-3. PSD: use `aLIGOZeroDetHighPower` or `flat` for an initial code-correctness
-   check?
+→ **Implement Step 2**: `scripts/batch_aligned_catalogs.py`
+  — batch comparison of all categories (a–d) from SXS, RIT, and MAYA
+  against NRSur7dq4, reusing the Step 1 infrastructure without SO(3)
+  optimization.
