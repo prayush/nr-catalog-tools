@@ -96,7 +96,8 @@ def compare_sim_vs_surrogate(
     sim_name: str,
     total_mass: float = 40.0,
     psd_name: str = "aLIGOZeroDetHighPower",
-    outdir: str = "results",
+    outdir: str = None,
+    figsdir: str = None,
     delta_t: float = DELTA_T,
     rotate: bool = False,
 ) -> dict:
@@ -134,7 +135,13 @@ def compare_sim_vs_surrogate(
               ...
             }
     """
+    if outdir is None:
+        outdir = os.path.abspath(os.path.join(_SCRIPTS_DIR, "..", "results"))
+    if figsdir is None:
+        figsdir = os.path.abspath(os.path.join(_SCRIPTS_DIR, "..", "figs"))
+
     os.makedirs(outdir, exist_ok=True)
+    os.makedirs(figsdir, exist_ok=True)
 
     # ── 1. Load catalog and waveform ─────────────────────────────────────────
     print(f"\n[1/6] Loading {catalog_name} catalog...")
@@ -268,7 +275,7 @@ def compare_sim_vs_surrogate(
             print(f"      SO(3)-optimized match failed: {exc}")
 
     # ── 6. Output ─────────────────────────────────────────────────────────────
-    print(f"[6/6] Writing outputs to {outdir}/...")
+    print(f"[6/6] Writing outputs (results to {outdir}/, figures to {figsdir}/)...")
     _write_csv(results, sim_name, catalog_name, total_mass, params, outdir)
     _plot(
         results,
@@ -280,7 +287,7 @@ def compare_sim_vs_surrogate(
         params,
         delta_t,
         psd_name,
-        outdir,
+        figsdir,
     )
     _print_table(results, sim_name)
 
@@ -546,8 +553,13 @@ def _build_parser():
     )
     p.add_argument(
         "--outdir",
-        default=os.path.join(_SCRIPTS_DIR, "results"),
-        help="Output directory for CSV and figure",
+        default=os.path.abspath(os.path.join(_SCRIPTS_DIR, "..", "results")),
+        help="Output directory for CSV matches (default: project/results)",
+    )
+    p.add_argument(
+        "--figsdir",
+        default=os.path.abspath(os.path.join(_SCRIPTS_DIR, "..", "figs")),
+        help="Output directory for figures (default: project/figs)",
     )
     p.add_argument(
         "--rotate",
@@ -565,6 +577,7 @@ if __name__ == "__main__":
         total_mass=args.total_mass,
         psd_name=args.psd,
         outdir=args.outdir,
+        figsdir=args.figsdir,
         delta_t=args.delta_t,
         rotate=args.rotate,
     )

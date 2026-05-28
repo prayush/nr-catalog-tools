@@ -141,9 +141,9 @@ def main():
             md_content += f"| {spin_cat} | {ecc_cat} | {sxs_val:,} | {rit_val:,} | {maya_val:,} |\n"
 
     # Write to results directory
-    # Script is in project/scripts/, results go to project/scripts/results/
+    # Script is in project/scripts/, results go to project/results/
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    results_dir = os.path.join(script_dir, "results")
+    results_dir = os.path.abspath(os.path.join(script_dir, "..", "results"))
 
     os.makedirs(results_dir, exist_ok=True)
     out_file = os.path.join(results_dir, "catalog_statistics.md")

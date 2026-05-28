@@ -52,7 +52,9 @@ def main():
     training_sims.sort()
 
     # Save to file
-    outdir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    outdir = os.path.abspath(os.path.join(script_dir, "..", "results"))
+    os.makedirs(outdir, exist_ok=True)
     out_file = os.path.join(outdir, "nrsur7dq4_training_simulations.txt")
 
     with open(out_file, "w") as f:

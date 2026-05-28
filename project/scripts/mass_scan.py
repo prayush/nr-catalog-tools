@@ -138,8 +138,14 @@ def compare_one_mass(wfm, cat, sim_name, total_mass):
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 
-def run_mass_scan(outdir="results"):
+def run_mass_scan(outdir=None, figsdir=None):
+    if outdir is None:
+        outdir = os.path.abspath(os.path.join(_SCRIPTS_DIR, "..", "results"))
+    if figsdir is None:
+        figsdir = os.path.abspath(os.path.join(_SCRIPTS_DIR, "..", "figs"))
+
     os.makedirs(outdir, exist_ok=True)
+    os.makedirs(figsdir, exist_ok=True)
 
     # results[sim_name][total_mass] = {(ell,em): {...}}
     all_results = {}
@@ -195,7 +201,7 @@ def run_mass_scan(outdir="results"):
         print(f"\nCSV written: {csv_path}")
 
     # ── Plot ──────────────────────────────────────────────────────────────────
-    _plot_mass_scan(all_results, outdir)
+    _plot_mass_scan(all_results, figsdir)
 
     return all_results
 
@@ -318,7 +324,14 @@ if __name__ == "__main__":
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     p.add_argument(
-        "--outdir", default="results", help="Output directory (default: results)"
+        "--outdir",
+        default=os.path.abspath(os.path.join(_SCRIPTS_DIR, "..", "results")),
+        help="Output directory for CSV results (default: project/results)",
+    )
+    p.add_argument(
+        "--figsdir",
+        default=os.path.abspath(os.path.join(_SCRIPTS_DIR, "..", "figs")),
+        help="Output directory for figures (default: project/figs)",
     )
     args = p.parse_args()
-    run_mass_scan(outdir=args.outdir)
+    run_mass_scan(outdir=args.outdir, figsdir=args.figsdir)

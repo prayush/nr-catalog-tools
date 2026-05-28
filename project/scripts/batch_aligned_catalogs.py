@@ -76,6 +76,7 @@ CSV_FIELDNAMES = [
     "catalog",
     "sim_id",
     "category",
+    "nrsur7dq4_calibration",
     "total_mass",
     "q",
     "mass1",
@@ -115,8 +116,13 @@ def enumerate_sims(
                 continue
             sims = data[full_name]["simulations"]
             for s in sims:
-                sim_id = s if isinstance(s, str) else s["id"]
-                rows.append((catname, sim_id, key))
+                if isinstance(s, dict):
+                    sim_id = s["id"]
+                    is_cal = bool(s.get("nrsur7dq4_calibration", False))
+                else:
+                    sim_id = s
+                    is_cal = False
+                rows.append((catname, sim_id, key, is_cal))
     return rows
 
 
@@ -151,7 +157,7 @@ def collect_metadata(
     results = []
 
     print(f"\nCollecting metadata for {len(sim_list)} candidate simulations...")
-    for i, (catname, sim_id, cat_key) in enumerate(sim_list):
+    for i, (catname, sim_id, cat_key, is_cal) in enumerate(sim_list):
         if i > 0 and i % 200 == 0:
             print(f"  {i}/{len(sim_list)} ...", flush=True)
 
@@ -186,6 +192,7 @@ def collect_metadata(
                 "catalog": catname,
                 "sim_id": sim_id,
                 "category": cat_key,
+                "nrsur7dq4_calibration": is_cal,
                 "total_mass": total_mass,
                 "q": q,
                 "mass1": m1,
@@ -228,6 +235,7 @@ def _run_one_sim(job: dict, delta_t: float, psd_name: str, distance: float) -> d
         "catalog",
         "sim_id",
         "category",
+        "nrsur7dq4_calibration",
         "total_mass",
         "q",
         "mass1",
@@ -345,6 +353,57 @@ def _append_row(csv_path: str, row: dict):
         writer.writerow(row)
 
 
+# ── CSV migration ─────────────────────────────────────────────────────────────
+
+
+def _migrate_add_calibration(merged_csv: str, catalog_names: list[str]) -> bool:
+    """Backfill nrsur7dq4_calibration column into an existing CSV if absent.
+
+    Reads the classification JSONs to look up calibration status for each
+    (catalog, sim_id) pair already in the CSV.  Returns True when a migration
+    was performed, False when the column was already present.
+    """
+    import pandas as pd
+
+    if not os.path.exists(merged_csv):
+        return False
+
+    # Cheap check: peek at the header only
+    df_peek = pd.read_csv(merged_csv, nrows=0)
+    if "nrsur7dq4_calibration" in df_peek.columns:
+        return False
+
+    # Build (catalog, sim_id) → is_calibration lookup from the JSON files
+    cal_lookup: dict[tuple[str, str], bool] = {}
+    for catname in catalog_names:
+        try:
+            data = _load_classification(catname)
+        except FileNotFoundError:
+            continue
+        for cat_data in data.values():
+            for s in cat_data.get("simulations", []):
+                if isinstance(s, dict):
+                    cal_lookup[(catname, s["id"])] = bool(
+                        s.get("nrsur7dq4_calibration", False)
+                    )
+                else:
+                    cal_lookup[(catname, s)] = False
+
+    df = pd.read_csv(merged_csv)
+    df["nrsur7dq4_calibration"] = df.apply(
+        lambda r: cal_lookup.get((r["catalog"], r["sim_id"]), False), axis=1
+    )
+    # Re-order columns to match CSV_FIELDNAMES (extra cols appended at the end)
+    ordered = [c for c in CSV_FIELDNAMES if c in df.columns]
+    extra = [c for c in df.columns if c not in ordered]
+    df[ordered + extra].to_csv(merged_csv, index=False)
+    print(
+        f"  Migrated {os.path.basename(merged_csv)}: "
+        f"added nrsur7dq4_calibration to {len(df)} rows."
+    )
+    return True
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 
@@ -373,10 +432,13 @@ def run_batch(
     if dry_run:
         from collections import Counter
 
-        cnt = Counter((c, k) for c, _, k in all_sims)
+        cnt = Counter((c, k) for c, _, k, _ic in all_sims)
         for (cat, key), n in sorted(cnt.items()):
             print(f"  {cat} category-{key}: {n} sims")
         return
+
+    # ── migrate existing CSV if nrsur7dq4_calibration column is absent ────────
+    _migrate_add_calibration(merged_csv, catalog_names)
 
     # ── metadata phase (sequential, fast) ────────────────────────────────────
     jobs = collect_metadata(all_sims, total_mass)
@@ -386,11 +448,10 @@ def run_batch(
     jobs_todo = [j for j in jobs if (j["catalog"], j["sim_id"]) not in done]
     print(f"\n  {len(done)} already processed, {len(jobs_todo)} remaining.")
 
+    _ensure_csv(merged_csv)
+
     if not jobs_todo:
         print("  Nothing to do — all sims already processed.")
-        return
-
-    _ensure_csv(merged_csv)
 
     # Stamp run-time config into each job so the top-level worker can use it
     # (local closures cannot be pickled by multiprocessing).
@@ -468,6 +529,19 @@ def run_batch(
     # ── write per-catalog CSVs ─────────────────────────────────────────────
     _split_by_catalog(merged_csv, outdir)
 
+    # ── generate per-simulation figures ────────────────────────────────────
+    _figs_base = os.path.join(_SCRIPTS_DIR, "..", "figs")
+    _indiv_dir = os.path.join(_figs_base, "individual_sims")
+    print(f"\nGenerating individual simulation figures → {_indiv_dir} ...")
+    try:
+        import pandas as _pd
+        from plot_batch_results import make_individual_sim_figures as _make_indiv
+
+        _df_all = _pd.read_csv(merged_csv)
+        _make_indiv(_df_all, outdir=_indiv_dir)
+    except Exception as _exc:
+        print(f"  Warning: individual figure generation failed: {_exc}")
+
 
 def _split_by_catalog(merged_csv: str, outdir: str):
     """Write per-catalog CSV files from the merged CSV."""
@@ -515,8 +589,8 @@ def _build_parser():
     )
     p.add_argument(
         "--outdir",
-        default=os.path.join(_SCRIPTS_DIR, "results"),
-        help="Output directory (default: scripts/results/)",
+        default=os.path.abspath(os.path.join(_SCRIPTS_DIR, "..", "results")),
+        help="Output directory (default: project/results/)",
     )
     p.add_argument(
         "--dry-run",
