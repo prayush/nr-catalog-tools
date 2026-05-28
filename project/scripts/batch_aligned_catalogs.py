@@ -254,6 +254,10 @@ def _run_one_sim(job: dict, delta_t: float, psd_name: str, distance: float) -> d
     for m in _MODE_COLS:
         row[m] = float("nan")
 
+    # Declare waveform handles so they're accessible after the try block
+    wfm = None
+    h_sur = None
+
     try:
         # Load catalog (per-process singleton)
         if catname not in _worker_cat_cache:
@@ -308,6 +312,26 @@ def _run_one_sim(job: dict, delta_t: float, psd_name: str, distance: float) -> d
 
     except Exception as exc:
         row["error"] = repr(exc)[:200]
+
+    # Generate 4-panel individual figure while waveforms are in memory
+    _indiv_dir = job.get("_indiv_dir")
+    if _indiv_dir and wfm is not None and h_sur is not None and not row.get("error"):
+        try:
+            import matplotlib
+
+            matplotlib.use("Agg")
+            from plot_batch_results import plot_individual_sim as _plot_indiv
+
+            _plot_indiv(
+                row,
+                _indiv_dir,
+                wfm=wfm,
+                h_sur=h_sur,
+                total_mass=job["total_mass"],
+                delta_t=delta_t,
+            )
+        except Exception:
+            pass
 
     return row
 
@@ -453,12 +477,18 @@ def run_batch(
     if not jobs_todo:
         print("  Nothing to do — all sims already processed.")
 
+    # Individual figure output directory (created now so workers can write to it)
+    _figs_base = os.path.join(_SCRIPTS_DIR, "..", "figs")
+    _indiv_dir = os.path.abspath(os.path.join(_figs_base, "individual_sims"))
+    os.makedirs(_indiv_dir, exist_ok=True)
+
     # Stamp run-time config into each job so the top-level worker can use it
     # (local closures cannot be pickled by multiprocessing).
     for j in jobs_todo:
         j["_delta_t"] = DELTA_T
         j["_psd_name"] = psd_name
         j["_distance"] = DISTANCE
+        j["_indiv_dir"] = _indiv_dir
 
     # ── processing loop ───────────────────────────────────────────────────────
     t0 = time.time()
@@ -528,19 +558,6 @@ def run_batch(
 
     # ── write per-catalog CSVs ─────────────────────────────────────────────
     _split_by_catalog(merged_csv, outdir)
-
-    # ── generate per-simulation figures ────────────────────────────────────
-    _figs_base = os.path.join(_SCRIPTS_DIR, "..", "figs")
-    _indiv_dir = os.path.join(_figs_base, "individual_sims")
-    print(f"\nGenerating individual simulation figures → {_indiv_dir} ...")
-    try:
-        import pandas as _pd
-        from plot_batch_results import make_individual_sim_figures as _make_indiv
-
-        _df_all = _pd.read_csv(merged_csv)
-        _make_indiv(_df_all, outdir=_indiv_dir)
-    except Exception as _exc:
-        print(f"  Warning: individual figure generation failed: {_exc}")
 
 
 def _split_by_catalog(merged_csv: str, outdir: str):

@@ -3,19 +3,20 @@
 
 Reads ``batch_aligned_all.csv`` (or individual per-catalog CSVs) and produces:
 
-Figure 1 — Match vs source parameters  (one column per parameter)
-  Rows: dominant (2,2) mode and each sub-dominant mode
-  Columns: q, χ_eff, χ₁z, χ₂z, eccentricity e
-  Color-coded by catalog; category shown via marker shape
+Figure 1a/1b — Mismatch vs source parameters (log y)
+  1a: all categories (eccentricity on log x)
+  1b: quasi-circular only (categories b+d)
 
-Figure 2 — Phase-difference-per-cycle vs source parameters
-  Same layout as Figure 1
+Figure 2a/2b — Phase-difference-per-cycle vs source parameters
+  2a: all categories (eccentricity on log x)
+  2b: quasi-circular only, log y
 
-Figure 3 — Match CDFs per catalog × category
-  One panel per mode; CDF lines colored by catalog, linestyle by category
+Figure 3a — Mismatch CDFs per catalog × category (log x)
+Figure 3b — Phase-diff CDFs per catalog × category
 
-Figure 4 — Mismatch 1−ℱ heatmap in (q, χ_eff) space
-  One sub-panel per catalog for the (2,2) mode; only quasi-circular (b+d)
+Figure 4  — Mismatch 1−ℱ heatmap in (q, χ_eff) space (log colour)
+
+Figure 5  — SXS calibration-split mismatch CDFs (log x)
 
 Usage
 -----
@@ -28,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -42,6 +44,8 @@ import matplotlib.colors as mcolors
 from matplotlib.lines import Line2D
 
 _SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _SCRIPTS_DIR)
+sys.path.insert(0, os.path.join(_SCRIPTS_DIR, "..", ".."))
 
 # ── Aesthetics ────────────────────────────────────────────────────────────────
 
@@ -105,7 +109,7 @@ def load_results(indir: str) -> pd.DataFrame:
             raise FileNotFoundError(f"No batch result CSVs found in {indir}")
         df = pd.concat(parts, ignore_index=True)
 
-    # Drop failed rows (error column non-empty)
+    # Drop failed rows
     if "error" in df.columns:
         df = df[df["error"].isna() | (df["error"] == "")]
 
@@ -129,19 +133,36 @@ def _good(series: pd.Series) -> pd.Series:
 _MODE_ORDER = ["22", "21", "33", "44", "32", "43"]
 _MODE_COLORS = ["#2166ac", "#74add1", "#abd9e9", "#fee090", "#f46d43", "#d73027"]
 
+_DELTA_T = 1.0 / 4096
+_DISTANCE = 1.0  # Mpc
+
 
 def plot_individual_sim(
     row: "pd.Series | dict",
     outdir: str,
     fmt: str = "png",
     dpi: int = 150,
+    wfm=None,
+    h_sur: dict | None = None,
+    total_mass: float | None = None,
+    delta_t: float = _DELTA_T,
 ) -> str | None:
-    """Two-panel per-simulation figure: match bar chart + phase-diff bar chart.
+    """Four-panel (or two-panel fallback) per-simulation figure.
 
-    Returns the saved file path, or None when no mode data is available.
+    Panels when waveforms are supplied:
+      1. (2,2) amplitude: NR and NRSur7dq4 overlaid
+      2. Re[h_{2,2}] near merger, phase-aligned
+      3. Per-mode match bars
+      4. Per-mode phase-diff bars
+
+    Falls back to 2-panel (match bars + phase-diff bars) when waveforms are
+    absent.  Returns the saved path or None when no mode data is available.
     """
     sim_id = str(row.get("sim_id", "unknown"))
     catalog = str(row.get("catalog", ""))
+
+    if total_mass is None:
+        total_mass = float(row.get("total_mass", 40.0))
 
     safe_id = sim_id.replace(":", "_").replace("/", "_")
     outpath = os.path.join(outdir, f"{safe_id}_mode_matches.{fmt}")
@@ -154,20 +175,140 @@ def plot_individual_sim(
 
     mode_labels = [MODE_LABEL.get(m, m) for m in _MODE_ORDER]
     x = np.arange(len(_MODE_ORDER))
+    has_wfm = wfm is not None and h_sur is not None
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 4.5), sharex=True)
+    if has_wfm:
+        fig, axes = plt.subplots(
+            4,
+            1,
+            figsize=(9, 12),
+            gridspec_kw={"height_ratios": [1.8, 1.8, 1.0, 1.0]},
+        )
+        ax_amp, ax_re, ax_match, ax_phase = axes
+    else:
+        fig, (ax_match, ax_phase) = plt.subplots(2, 1, figsize=(7, 4.5), sharex=True)
 
-    # ── match bars ────────────────────────────────────────────────────────────
-    bars1 = ax1.bar(
+    # ── Panel 1: (2,2) amplitude ──────────────────────────────────────────
+    if has_wfm:
+        h22_nr = None
+        h22_sur = h_sur.get((2, 2)) if isinstance(h_sur, dict) else None
+        try:
+            h22_nr = wfm.get_mode(
+                2,
+                2,
+                total_mass=total_mass,
+                distance=_DISTANCE,
+                delta_t_seconds=delta_t,
+            )
+            t_nr = np.array(h22_nr.sample_times)
+            amp_nr = np.abs(np.array(h22_nr))
+            ax_amp.plot(t_nr, amp_nr, color="C0", lw=1.5, label="NR", alpha=0.9)
+        except Exception:
+            ax_amp.text(
+                0.5,
+                0.5,
+                "NR (2,2) unavailable",
+                transform=ax_amp.transAxes,
+                ha="center",
+                va="center",
+                fontsize=7,
+                color="gray",
+            )
+            h22_nr = None
+
+        if h22_sur is not None:
+            t_sur = np.array(h22_sur.sample_times)
+            amp_sur = np.abs(np.array(h22_sur))
+            ax_amp.plot(
+                t_sur,
+                amp_sur,
+                color="C1",
+                lw=1.5,
+                ls="--",
+                label="NRSur7dq4",
+                alpha=0.9,
+            )
+
+        ax_amp.set_ylabel(r"$|h_{22}|$ [strain]", fontsize=9)
+        ax_amp.set_title(r"$(2,2)$ mode amplitude", fontsize=9)
+        ax_amp.legend(fontsize=8)
+        if h22_nr is not None:
+            ax_amp.set_xlim(left=max(-2.0, float(t_nr[0])))
+        ax_amp.grid(True, lw=0.4, alpha=0.4)
+        ax_amp.tick_params(labelsize=7)
+
+        # ── Panel 2: Re[h_{2,2}] near merger ─────────────────────────────
+        if h22_nr is not None and h22_sur is not None:
+            try:
+                t_nr_full = np.array(h22_nr.sample_times)
+                re_nr = np.array(h22_nr.real())
+                mask_nr = t_nr_full >= -0.25
+                ax_re.plot(
+                    t_nr_full[mask_nr], re_nr[mask_nr], color="C0", lw=1.2, label="NR"
+                )
+
+                # Phase-align surrogate at peak
+                idx_nr_peak = int(np.argmax(np.abs(np.array(h22_nr))))
+                idx_sur_peak = int(np.argmax(np.abs(np.array(h22_sur))))
+                phase_nr_at_peak = np.angle(np.array(h22_nr)[idx_nr_peak])
+                phase_sur_at_peak = np.angle(np.array(h22_sur)[idx_sur_peak])
+                h22_sur_aligned = np.array(h22_sur) * np.exp(
+                    1j * (phase_nr_at_peak - phase_sur_at_peak)
+                )
+
+                t_sur_full = np.array(h22_sur.sample_times)
+                mask_sur = t_sur_full >= -0.25
+                ax_re.plot(
+                    t_sur_full[mask_sur],
+                    h22_sur_aligned[mask_sur].real,
+                    color="C1",
+                    lw=1.2,
+                    ls="--",
+                    label="NRSur7dq4 (phase-aligned)",
+                )
+            except Exception:
+                ax_re.text(
+                    0.5,
+                    0.5,
+                    "alignment failed",
+                    transform=ax_re.transAxes,
+                    ha="center",
+                    va="center",
+                    fontsize=7,
+                    color="gray",
+                )
+        else:
+            ax_re.text(
+                0.5,
+                0.5,
+                "waveform data unavailable",
+                transform=ax_re.transAxes,
+                ha="center",
+                va="center",
+                fontsize=7,
+                color="gray",
+            )
+
+        ax_re.set_ylabel(r"$\mathrm{Re}[h_{22}]$ [strain]", fontsize=9)
+        ax_re.set_title(r"$(2,2)$ real part — merger region", fontsize=9)
+        ax_re.legend(fontsize=8)
+        ax_re.grid(True, lw=0.4, alpha=0.4)
+        ax_re.tick_params(labelsize=7)
+
+    # ── Panel 3 (or 1): match bars ────────────────────────────────────────
+    bars1 = ax_match.bar(
         x, matches, color=_MODE_COLORS, edgecolor="k", linewidth=0.5, width=0.65
     )
-    ax1.axhline(1.0, color="k", lw=0.5, ls="--", alpha=0.5)
-    ax1.set_ylim(0, 1.08)
-    ax1.set_ylabel(r"Match $\mathcal{F}$", fontsize=9)
-    ax1.grid(True, axis="y", lw=0.4, alpha=0.4)
+    ax_match.axhline(1.0, color="k", lw=0.5, ls="--", alpha=0.5)
+    ax_match.set_ylim(0, 1.08)
+    ax_match.set_ylabel(r"Match $\mathcal{F}$", fontsize=9)
+    ax_match.grid(True, axis="y", lw=0.4, alpha=0.4)
+    ax_match.tick_params(labelsize=7)
+    if not has_wfm:
+        ax_match.set_xticks([])
     for bar, v in zip(bars1, matches):
         if np.isfinite(v):
-            ax1.text(
+            ax_match.text(
                 bar.get_x() + bar.get_width() / 2,
                 min(v + 0.015, 1.04),
                 f"{v:.3f}",
@@ -176,18 +317,19 @@ def plot_individual_sim(
                 fontsize=6.5,
             )
 
-    # ── phase-diff bars ───────────────────────────────────────────────────────
-    bars2 = ax2.bar(
+    # ── Panel 4 (or 2): phase-diff bars ──────────────────────────────────
+    bars2 = ax_phase.bar(
         x, phase_diffs, color=_MODE_COLORS, edgecolor="k", linewidth=0.5, width=0.65
     )
-    ax2.set_ylabel(r"$\Delta\Phi/{\rm cycle}$ [rad]", fontsize=9)
-    ax2.set_xticks(x)
-    ax2.set_xticklabels(mode_labels, fontsize=8.5)
-    ax2.grid(True, axis="y", lw=0.4, alpha=0.4)
+    ax_phase.set_ylabel(r"$\Delta\Phi/{\rm cycle}$ [rad]", fontsize=9)
+    ax_phase.set_xticks(x)
+    ax_phase.set_xticklabels(mode_labels, fontsize=8.5)
+    ax_phase.grid(True, axis="y", lw=0.4, alpha=0.4)
+    ax_phase.tick_params(labelsize=7)
     max_pd = max((v for v in phase_diffs if np.isfinite(v)), default=0)
     for bar, v in zip(bars2, phase_diffs):
         if np.isfinite(v) and v > 0:
-            ax2.text(
+            ax_phase.text(
                 bar.get_x() + bar.get_width() / 2,
                 v + 0.005 * max(max_pd, 0.05),
                 f"{v:.3f}",
@@ -196,7 +338,7 @@ def plot_individual_sim(
                 fontsize=6.5,
             )
 
-    # ── title ─────────────────────────────────────────────────────────────────
+    # ── Title ─────────────────────────────────────────────────────────────
     q = row.get("q", np.nan)
     s1z = row.get("spin1z", np.nan)
     s2z = row.get("spin2z", np.nan)
@@ -212,7 +354,7 @@ def plot_individual_sim(
         fontsize=8.5,
     )
 
-    plt.tight_layout(rect=[0, 0, 1, 0.94])
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
     os.makedirs(outdir, exist_ok=True)
     fig.savefig(outpath, dpi=dpi, bbox_inches="tight")
     plt.close(fig)
@@ -224,26 +366,99 @@ def make_individual_sim_figures(
     outdir: str,
     fmt: str = "png",
     dpi: int = 120,
-    skip_existing: bool = True,
+    skip_existing: bool = False,
 ) -> None:
-    """Generate one figure per simulation row from a batch-results DataFrame."""
+    """Generate one 4-panel figure per simulation row from a batch-results DataFrame.
+
+    Loads NR waveforms and generates surrogate modes on-the-fly from the
+    parameters stored in the CSV.  Falls back to 2-panel (bar charts only) if
+    waveform loading fails for a given simulation.
+    """
     os.makedirs(outdir, exist_ok=True)
     n_saved = n_skipped = n_failed = 0
+
+    # Pre-load surrogate and catalog utilities once
+    _wfm_support = False
+    _generate_sur = None
+    _load_catalog = None
+    try:
+        from surrogate_utils import generate_surrogate_modes, load_nrsur7dq4
+        from catalog_utils import load_catalog
+
+        print("  Pre-loading NRSur7dq4 surrogate model ...")
+        load_nrsur7dq4()
+        _generate_sur = generate_surrogate_modes
+        _load_catalog = load_catalog
+        _wfm_support = True
+        print("  Surrogate loaded.")
+    except Exception as _e:
+        print(
+            f"  Warning: waveform utilities unavailable ({_e}); "
+            "generating 2-panel figures from CSV data only."
+        )
+
+    cat_cache: dict = {}
 
     for idx, row in df.iterrows():
         err = row.get("error", "")
         if err and str(err) not in ("", "nan"):
             continue
+
         sim_id = str(row.get("sim_id", ""))
         safe_id = sim_id.replace(":", "_").replace("/", "_")
         outpath = os.path.join(outdir, f"{safe_id}_mode_matches.{fmt}")
         if skip_existing and os.path.exists(outpath):
             n_skipped += 1
             continue
+
+        total_mass = float(row.get("total_mass", 40.0))
+        wfm = None
+        h_sur = None
+
+        if _wfm_support:
+            try:
+                catalog_name = str(row.get("catalog", ""))
+                if catalog_name not in cat_cache:
+                    cat_cache[catalog_name] = _load_catalog(catalog_name)
+                cat = cat_cache[catalog_name]
+                wfm = cat.get(sim_id)
+
+                # Reconstruct params from CSV (aligned-spin: perp components = 0)
+                params = {
+                    "mass1": float(row["mass1"]),
+                    "mass2": float(row["mass2"]),
+                    "spin1x": 0.0,
+                    "spin1y": 0.0,
+                    "spin1z": float(row.get("spin1z", 0.0)),
+                    "spin2x": 0.0,
+                    "spin2y": 0.0,
+                    "spin2z": float(row.get("spin2z", 0.0)),
+                    "f_lower": float(row.get("f_lower_nr", 20.0)),
+                }
+                h_sur, _ = _generate_sur(
+                    params,
+                    total_mass=total_mass,
+                    distance=_DISTANCE,
+                    delta_t_seconds=_DELTA_T,
+                )
+            except Exception:
+                wfm = None
+                h_sur = None
+
         try:
-            result = plot_individual_sim(row, outdir, fmt=fmt, dpi=dpi)
+            result = plot_individual_sim(
+                row,
+                outdir,
+                fmt=fmt,
+                dpi=dpi,
+                wfm=wfm,
+                h_sur=h_sur,
+                total_mass=total_mass,
+            )
             if result:
                 n_saved += 1
+            else:
+                n_failed += 1
         except Exception:
             n_failed += 1
 
@@ -258,8 +473,8 @@ def make_individual_sim_figures(
 
 def _scatter_grid(
     df: pd.DataFrame,
-    y_col_template: str,  # e.g. "match_{mode}" or "phase_diff_{mode}"
-    y_label_template: str,  # e.g. "Match $\\mathcal{{F}}$" or "ΔΦ/cycle [rad]"
+    y_col_template: str,
+    y_label_template: str,
     modes: list[str],
     params: list[str],
     outpath: str,
@@ -300,7 +515,7 @@ def _scatter_grid(
                 )
                 continue
 
-            for catname in ["MAYA", "RIT", "SXS"]:  # back-to-front z-order
+            for catname in ["MAYA", "RIT", "SXS"]:
                 if catname not in df["catalog"].values:
                     continue
                 sub = df[df["catalog"] == catname]
@@ -310,11 +525,11 @@ def _scatter_grid(
                         continue
                     xv = sub.loc[mask, param]
                     yv = sub.loc[mask, y_col]
-                    # For log-x columns filter non-positive x values
+                    valid = np.isfinite(xv) & np.isfinite(yv)
                     if use_log_x:
-                        valid = np.isfinite(xv) & np.isfinite(yv) & (xv > 0)
-                    else:
-                        valid = np.isfinite(xv) & np.isfinite(yv)
+                        valid &= xv > 0
+                    if log_y:
+                        valid &= yv > 0
                     if valid.sum() == 0:
                         continue
                     ax.scatter(
@@ -341,13 +556,12 @@ def _scatter_grid(
                 ax.set_xlabel(PARAM_LABEL.get(param, param), fontsize=9)
             if col_idx == 0:
                 ax.set_ylabel(
-                    y_label_template + f"\n{MODE_LABEL.get(mode, mode)}",
-                    fontsize=8,
+                    y_label_template + f"\n{MODE_LABEL.get(mode, mode)}", fontsize=8
                 )
             ax.grid(True, lw=0.4, alpha=0.4)
             ax.tick_params(labelsize=7)
 
-    # ── shared legend ────────────────────────────────────────────────────────
+    # shared legend
     legend_handles = []
     for catname, color in CATALOG_COLOR.items():
         legend_handles.append(
@@ -429,6 +643,10 @@ def _cdf_figure(
                 vals = _good(df.loc[mask, col])
                 if len(vals) < 3:
                     continue
+                if log_x:
+                    vals = vals[vals > 0]
+                if len(vals) < 3:
+                    continue
                 vals_sorted = np.sort(vals)
                 cdf = np.arange(1, len(vals_sorted) + 1) / len(vals_sorted)
                 ax.plot(
@@ -455,7 +673,6 @@ def _cdf_figure(
         if plotted and idx == 0:
             ax.legend(fontsize=6.5, loc="upper left", ncol=2, framealpha=0.7)
 
-    # hide unused panels
     for idx in range(len(modes), nrows * ncols):
         axes[idx // ncols][idx % ncols].set_visible(False)
 
@@ -474,9 +691,10 @@ def _heatmap_figure(
     metric_col: str,
     title: str,
     outpath: str,
-    vmin: float = 0.95,
-    vmax: float = 1.0,
+    vmin: float = 0.0,
+    vmax: float = 0.1,
     categories: list[str] | None = None,
+    log_color: bool = False,
 ):
     cats = categories or ["b", "d"]
     sub = df[df["category"].isin(cats)].copy()
@@ -487,14 +705,20 @@ def _heatmap_figure(
     sub = sub[
         np.isfinite(sub["q"]) & np.isfinite(sub["chi_eff"]) & np.isfinite(sub[col])
     ]
+    if log_color:
+        sub = sub[sub[col] > 0]
 
     catalogs = [c for c in ["SXS", "RIT", "MAYA"] if c in sub["catalog"].values]
     fig, axes = plt.subplots(
         1, len(catalogs), figsize=(4.5 * len(catalogs), 3.8), squeeze=False
     )
 
-    cmap = plt.cm.RdYlGn
-    norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+    # For mismatch: low = good = green; use reversed colormap
+    cmap = plt.cm.RdYlGn_r if log_color else plt.cm.RdYlGn
+    if log_color:
+        norm = mcolors.LogNorm(vmin=max(vmin, 1e-6), vmax=vmax)
+    else:
+        norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
 
     for ax, catname in zip(axes[0], catalogs):
         s = sub[sub["catalog"] == catname]
@@ -530,16 +754,18 @@ def _heatmap_figure(
 
 
 def _print_summary(df: pd.DataFrame, modes: list[str]):
-    print("\n=== Match summary (median / 10th pctile) for quasi-circular (b+d) ===")
+    print("\n=== Mismatch summary (median / 90th pctile) for quasi-circular (b+d) ===")
     qc = df[df["category"].isin(["b", "d"])]
     hdr = f"  {'Mode':<8}" + "".join(
         f"  {'':>6}{cat:<12}" for cat in ["SXS", "RIT", "MAYA"]
     )
     print(hdr)
     for mode in modes:
-        col = f"match_{mode}"
+        col = f"mismatch_{mode}"
         if col not in qc.columns:
-            continue
+            col = f"match_{mode}"
+            if col not in qc.columns:
+                continue
         row_str = f"  {MODE_LABEL.get(mode, mode):<8}"
         for catname in ["SXS", "RIT", "MAYA"]:
             vals = _good(qc[qc["catalog"] == catname][col])
@@ -547,8 +773,8 @@ def _print_summary(df: pd.DataFrame, modes: list[str]):
                 row_str += f"  {'—':>18}"
             else:
                 med = np.median(vals)
-                p10 = np.percentile(vals, 10)
-                row_str += f"  {med:.4f} / {p10:.4f}"
+                p90 = np.percentile(vals, 90)
+                row_str += f"  {med:.4f} / {p90:.4f}"
         print(row_str)
 
 
@@ -565,11 +791,7 @@ def _cdf_calibration_split_figure(
     x_lim: tuple | None = None,
     log_x: bool = False,
 ):
-    """CDFs where SXS is split into NRSur calibration vs non-calibration subsets.
-
-    SXS calibration sims are shown as solid blue; SXS non-calibration as dashed
-    blue; RIT and MAYA appear as solid lines in their respective catalog colors.
-    """
+    """Mismatch CDFs where SXS is split into NRSur calibration vs non-calibration."""
     cats_to_plot = categories or ["b", "d"]
     has_cal_col = "nrsur7dq4_calibration" in df.columns
 
@@ -598,6 +820,8 @@ def _cdf_calibration_split_figure(
             ]:
                 mask = sxs["nrsur7dq4_calibration"].astype(bool) == is_cal
                 vals = _good(sxs.loc[mask, col])
+                if log_x:
+                    vals = vals[vals > 0]
                 if len(vals) >= 3:
                     vs = np.sort(vals)
                     cdf = np.arange(1, len(vs) + 1) / len(vs)
@@ -613,16 +837,19 @@ def _cdf_calibration_split_figure(
                     plotted = True
         else:
             vals = _good(sxs[col])
+            if log_x:
+                vals = vals[vals > 0]
             if len(vals) >= 3:
                 vs = np.sort(vals)
                 cdf = np.arange(1, len(vs) + 1) / len(vs)
                 ax.plot(vs, cdf, color=CATALOG_COLOR["SXS"], lw=1.5, label="SXS")
                 plotted = True
 
-        # RIT and MAYA (all sims together)
         for catname in ["RIT", "MAYA"]:
             mask = (df["catalog"] == catname) & df["category"].isin(cats_to_plot)
             vals = _good(df.loc[mask, col])
+            if log_x:
+                vals = vals[vals > 0]
             if len(vals) >= 3:
                 vs = np.sort(vals)
                 cdf = np.arange(1, len(vs) + 1) / len(vs)
@@ -686,35 +913,39 @@ def make_all_figures(
     params_qc = ["q", "chi_eff", "spin1z", "spin2z"]
     qc_cats = [c for c in categories if c in ("b", "d")]
 
-    # ── Figure 1a: match vs all params, eccentricity on log x ────────────────
-    print("\nGenerating Figure 1a — match vs source params (all categories)...")
+    # ── Figure 1a: mismatch vs all params (log y, eccentricity log x) ────
+    print("\nGenerating Figure 1a — mismatch vs source params (all categories)...")
     _scatter_grid(
         df,
-        y_col_template="match_{mode}",
-        y_label_template=r"Match $\mathcal{F}$",
+        y_col_template="mismatch_{mode}",
+        y_label_template=r"Mismatch $1{-}\mathcal{F}$",
         modes=modes,
         params=params_all,
-        outpath=os.path.join(outdir, f"fig1a_match_vs_params.{fmt}"),
-        y_lim=(0.0, 1.02),
+        outpath=os.path.join(outdir, f"fig1a_mismatch_vs_params.{fmt}"),
+        y_lim=(1e-4, 1.0),
+        log_y=True,
         log_x_cols=["eccentricity"],
         categories=categories,
     )
 
-    # ── Figure 1b: match vs params, quasi-circular only (b+d) ────────────────
+    # ── Figure 1b: mismatch vs qc params (log y) ─────────────────────────
     if qc_cats:
-        print("Generating Figure 1b — match vs source params (quasi-circular b+d)...")
+        print(
+            "Generating Figure 1b — mismatch vs source params (quasi-circular b+d)..."
+        )
         _scatter_grid(
             df[df["category"].isin(qc_cats)],
-            y_col_template="match_{mode}",
-            y_label_template=r"Match $\mathcal{F}$",
+            y_col_template="mismatch_{mode}",
+            y_label_template=r"Mismatch $1{-}\mathcal{F}$",
             modes=modes,
             params=params_qc,
-            outpath=os.path.join(outdir, f"fig1b_match_vs_params_qc.{fmt}"),
-            y_lim=(0.7, 1.005),
+            outpath=os.path.join(outdir, f"fig1b_mismatch_vs_params_qc.{fmt}"),
+            y_lim=(1e-4, 1.0),
+            log_y=True,
             categories=qc_cats,
         )
 
-    # ── Figure 2a: phase diff vs all params, eccentricity on log x ───────────
+    # ── Figure 2a: phase diff vs all params (eccentricity log x) ─────────
     print("Generating Figure 2a — phase diff vs source params...")
     _scatter_grid(
         df,
@@ -729,7 +960,7 @@ def make_all_figures(
         categories=categories,
     )
 
-    # ── Figure 2b: log phase diff vs params, quasi-circular ──────────────────
+    # ── Figure 2b: log phase diff vs qc params ────────────────────────────
     if qc_cats:
         print("Generating Figure 2b — log phase diff vs source params (qc)...")
         _scatter_grid(
@@ -744,115 +975,64 @@ def make_all_figures(
             categories=qc_cats,
         )
 
-    # ── Figure 3a: match CDFs ─────────────────────────────────────────────────
-    print("Generating Figure 3a — match CDFs per mode...")
-    _cdf_figure(
-        df,
-        modes=modes,
-        metric_col="match_{mode}",
-        x_label=r"Match $\mathcal{F}$",
-        outpath=os.path.join(outdir, f"fig3a_match_cdf.{fmt}"),
-        categories=qc_cats or categories,
-        x_lim=(0.5, 1.0),
-    )
-
-    # ── Figure 3b: mismatch CDFs (log scale) ─────────────────────────────────
-    print("Generating Figure 3b — mismatch CDFs (log)...")
+    # ── Figure 3a: mismatch CDFs (log x) ─────────────────────────────────
+    print("Generating Figure 3a — mismatch CDFs (log x)...")
     _cdf_figure(
         df,
         modes=modes,
         metric_col="mismatch_{mode}",
         x_label=r"Mismatch $1 - \mathcal{F}$",
-        outpath=os.path.join(outdir, f"fig3b_mismatch_cdf.{fmt}"),
+        outpath=os.path.join(outdir, f"fig3a_mismatch_cdf.{fmt}"),
         categories=qc_cats or categories,
         x_lim=(1e-4, 1.0),
         log_x=True,
     )
 
-    # ── Figure 3c: phase-diff CDFs ────────────────────────────────────────────
-    print("Generating Figure 3c — phase diff CDFs per mode...")
+    # ── Figure 3b: phase-diff CDFs ────────────────────────────────────────
+    print("Generating Figure 3b — phase diff CDFs per mode...")
     _cdf_figure(
         df,
         modes=modes,
         metric_col="phase_diff_{mode}",
         x_label=r"$\Delta\Phi/\mathrm{cycle}$ [rad]",
-        outpath=os.path.join(outdir, f"fig3c_phasediff_cdf.{fmt}"),
+        outpath=os.path.join(outdir, f"fig3b_phasediff_cdf.{fmt}"),
         categories=qc_cats or categories,
         x_lim=(0, 2.0),
     )
 
-    # ── Figure 4: (q, χ_eff) heatmaps for (2,2) match ────────────────────────
-    print("Generating Figure 4 — (q, χ_eff) match heatmaps (qc)...")
+    # ── Figure 4: (q, χ_eff) mismatch heatmaps ───────────────────────────
+    print("Generating Figure 4 — (q, χ_eff) mismatch heatmaps (qc)...")
     _heatmap_figure(
         df,
         mode="22",
-        metric_col="match_{mode}",
-        title=r"Match $\mathcal{F}_{22}$",
-        outpath=os.path.join(outdir, f"fig4_match22_heatmap_qc.{fmt}"),
-        vmin=0.90,
+        metric_col="mismatch_{mode}",
+        title=r"Mismatch $1{-}\mathcal{F}_{22}$",
+        outpath=os.path.join(outdir, f"fig4_mismatch22_heatmap_qc.{fmt}"),
+        vmin=1e-4,
         vmax=1.0,
+        log_color=True,
         categories=qc_cats or categories,
     )
 
-    # ── Figure 5a: mismatch vs all params (log y), eccentricity log x ─────────
-    print("Generating Figure 5a — mismatch vs source params (log scale)...")
-    _scatter_grid(
-        df,
-        y_col_template="mismatch_{mode}",
-        y_label_template=r"Mismatch $1{-}\mathcal{F}$",
-        modes=modes,
-        params=params_all,
-        outpath=os.path.join(outdir, f"fig5a_mismatch_vs_params.{fmt}"),
-        y_lim=(1e-4, 1.0),
-        log_y=True,
-        log_x_cols=["eccentricity"],
-        categories=categories,
-    )
-
-    # ── Figure 5b: mismatch vs qc params (log y) ──────────────────────────────
-    if qc_cats:
-        print("Generating Figure 5b — mismatch vs source params, qc (log scale)...")
-        _scatter_grid(
-            df[df["category"].isin(qc_cats)],
-            y_col_template="mismatch_{mode}",
-            y_label_template=r"Mismatch $1{-}\mathcal{F}$",
-            modes=modes,
-            params=params_qc,
-            outpath=os.path.join(outdir, f"fig5b_mismatch_vs_params_qc.{fmt}"),
-            y_lim=(1e-4, 1.0),
-            log_y=True,
-            categories=qc_cats,
-        )
-
-    # ── Figure 6a: SXS calibration-split match CDF ────────────────────────────
-    print("Generating Figure 6a — SXS cal-split match CDFs...")
-    _cdf_calibration_split_figure(
-        df,
-        modes=modes,
-        metric_col="match_{mode}",
-        x_label=r"Match $\mathcal{F}$",
-        outpath=os.path.join(outdir, f"fig6a_sxs_cal_match_cdf.{fmt}"),
-        categories=qc_cats or categories,
-        x_lim=(0.5, 1.0),
-    )
-
-    # ── Figure 6b: SXS calibration-split mismatch CDF (log) ──────────────────
-    print("Generating Figure 6b — SXS cal-split mismatch CDFs (log)...")
+    # ── Figure 5: SXS calibration-split mismatch CDFs (log x) ────────────
+    print("Generating Figure 5 — SXS cal-split mismatch CDFs (log)...")
     _cdf_calibration_split_figure(
         df,
         modes=modes,
         metric_col="mismatch_{mode}",
         x_label=r"Mismatch $1 - \mathcal{F}$",
-        outpath=os.path.join(outdir, f"fig6b_sxs_cal_mismatch_cdf.{fmt}"),
+        outpath=os.path.join(outdir, f"fig5_sxs_cal_mismatch_cdf.{fmt}"),
         categories=qc_cats or categories,
         x_lim=(1e-4, 1.0),
         log_x=True,
     )
 
-    # ── Individual simulation figures ─────────────────────────────────────────
+    # ── Individual simulation figures ─────────────────────────────────────
     indiv_dir = os.path.join(outdir, "individual_sims")
-    print(f"Generating individual simulation figures → {indiv_dir} ...")
-    make_individual_sim_figures(df, outdir=indiv_dir, fmt=fmt, dpi=dpi)
+    print(f"\nGenerating individual simulation figures → {indiv_dir} ...")
+    make_individual_sim_figures(
+        df, outdir=indiv_dir, fmt=fmt, dpi=dpi, skip_existing=False
+    )
 
     print(f"\nAll figures saved to {outdir}/")
 
@@ -891,11 +1071,25 @@ def _build_parser():
         help="Output figure format (default: png)",
     )
     p.add_argument("--dpi", type=int, default=150)
+    p.add_argument(
+        "--no-indiv",
+        action="store_true",
+        help="Skip per-simulation figure generation (fast summary only)",
+    )
     return p
 
 
 if __name__ == "__main__":
     args = _build_parser().parse_args()
+    if args.no_indiv:
+        # Patch make_all_figures to skip individual figures
+        _orig = make_individual_sim_figures
+
+        def _noop(*a, **kw):
+            print("  --no-indiv: skipping per-simulation figures.")
+
+        make_individual_sim_figures = _noop  # noqa: F811
+
     make_all_figures(
         indir=args.indir,
         outdir=args.outdir,
