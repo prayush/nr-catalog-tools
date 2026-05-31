@@ -367,18 +367,31 @@ def _plot(
 
     # ── Panel 1: (2,2) amplitude ─────────────────────────────────────────────
     ax = axes[0]
+    h22_nr = None
     try:
         h22_nr = wfm.get_mode(
             2, 2, total_mass=total_mass, distance=DISTANCE, delta_t_seconds=delta_t
         )
-        t_nr = np.array(h22_nr.sample_times)
-        amp_nr = np.abs(np.array(h22_nr))
-        ax.plot(t_nr, amp_nr, color="C0", lw=1.5, label="NR", alpha=0.9)
     except Exception:
         pass
 
+    h22_sur = None
     if (2, 2) in h_sur:
         h22_sur = h_sur[(2, 2)]
+
+    if h22_nr is not None and h22_sur is not None:
+        t_start = max(float(h22_nr.start_time), float(h22_sur.start_time))
+        t_end = min(float(h22_nr.end_time), float(h22_sur.end_time))
+        if t_end > t_start:
+            h22_nr = h22_nr.time_slice(t_start, t_end)
+            h22_sur = h22_sur.time_slice(t_start, t_end)
+
+    if h22_nr is not None:
+        t_nr = np.array(h22_nr.sample_times)
+        amp_nr = np.abs(np.array(h22_nr))
+        ax.plot(t_nr, amp_nr, color="C0", lw=1.5, label="NR", alpha=0.9)
+
+    if h22_sur is not None:
         t_sur = np.array(h22_sur.sample_times)
         amp_sur = np.abs(np.array(h22_sur))
         ax.plot(

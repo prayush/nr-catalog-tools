@@ -92,17 +92,35 @@ def compute_mode_match(
     ):
         return float("nan")
 
+    t_start = max(float(h_nr.start_time), float(h_sur.start_time))
+    t_end = min(float(h_nr.end_time), float(h_sur.end_time))
+
+    if t_end <= t_start:
+        return float("nan")
+
+    # Time-slice both waveforms to the common time window
+    h_nr_sliced = h_nr.time_slice(t_start, t_end)
+    h_sur_sliced = h_sur.time_slice(t_start, t_end)
+
+    # Apply a gentle taper to suppress spectral leakage from the hard cut
+    from pycbc.waveform.utils import taper_timeseries
+
+    h1_tapered = taper_timeseries(h_nr_sliced, tapermethod="startend", return_lal=False)
+    h2_tapered = taper_timeseries(
+        h_sur_sliced, tapermethod="startend", return_lal=False
+    )
+
     # Pad to the next power-of-two >= max length.  PyCBC match() requires
     # the PSD delta_f to exactly equal the waveform frequency series delta_f,
     # so we must build the PSD *after* we know the final padded length.
-    raw_len = max(len(h_nr), len(h_sur))
+    raw_len = max(len(h1_tapered), len(h2_tapered))
     n_fft = 1
     while n_fft < raw_len:
         n_fft <<= 1
 
-    h1 = h_nr.copy()
+    h1 = h1_tapered.copy()
     h1.resize(n_fft)
-    h2 = h_sur.copy()
+    h2 = h2_tapered.copy()
     h2.resize(n_fft)
 
     delta_f = 1.0 / (n_fft * h1.delta_t)

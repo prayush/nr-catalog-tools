@@ -200,9 +200,6 @@ def plot_individual_sim(
                 distance=_DISTANCE,
                 delta_t_seconds=delta_t,
             )
-            t_nr = np.array(h22_nr.sample_times)
-            amp_nr = np.abs(np.array(h22_nr))
-            ax_amp.plot(t_nr, amp_nr, color="C0", lw=1.5, label="NR", alpha=0.9)
         except Exception:
             ax_amp.text(
                 0.5,
@@ -215,6 +212,18 @@ def plot_individual_sim(
                 color="gray",
             )
             h22_nr = None
+
+        if h22_nr is not None and h22_sur is not None:
+            t_start = max(float(h22_nr.start_time), float(h22_sur.start_time))
+            t_end = min(float(h22_nr.end_time), float(h22_sur.end_time))
+            if t_end > t_start:
+                h22_nr = h22_nr.time_slice(t_start, t_end)
+                h22_sur = h22_sur.time_slice(t_start, t_end)
+
+        if h22_nr is not None:
+            t_nr = np.array(h22_nr.sample_times)
+            amp_nr = np.abs(np.array(h22_nr))
+            ax_amp.plot(t_nr, amp_nr, color="C0", lw=1.5, label="NR", alpha=0.9)
 
         if h22_sur is not None:
             t_sur = np.array(h22_sur.sample_times)
@@ -1002,16 +1011,32 @@ def make_all_figures(
 
     # ── Figure 4: (q, χ_eff) mismatch heatmaps ───────────────────────────
     print("Generating Figure 4 — (q, χ_eff) mismatch heatmaps (qc)...")
-    _heatmap_figure(
+    for mode in modes:
+        _heatmap_figure(
+            df,
+            mode=mode,
+            metric_col="mismatch_{mode}",
+            title=rf"Mismatch $1{{-}}\mathcal{{F}}_{{{mode}}}$",
+            outpath=os.path.join(outdir, f"fig4_mismatch{mode}_heatmap_qc.{fmt}"),
+            vmin=1e-4,
+            vmax=1.0,
+            log_color=True,
+            categories=qc_cats or categories,
+        )
+
+    # ── Figure 1c: mismatch vs eccentricity ─────────────────────────────
+    print("Generating Figure 1c — mismatch vs eccentricity...")
+    _scatter_grid(
         df,
-        mode="22",
-        metric_col="mismatch_{mode}",
-        title=r"Mismatch $1{-}\mathcal{F}_{22}$",
-        outpath=os.path.join(outdir, f"fig4_mismatch22_heatmap_qc.{fmt}"),
-        vmin=1e-4,
-        vmax=1.0,
-        log_color=True,
-        categories=qc_cats or categories,
+        y_col_template="mismatch_{mode}",
+        y_label_template=r"Mismatch $1{-}\mathcal{F}$",
+        modes=modes,
+        params=["eccentricity"],
+        outpath=os.path.join(outdir, f"fig1c_mismatch_vs_eccentricity.{fmt}"),
+        y_lim=(1e-4, 1.0),
+        log_y=True,
+        log_x_cols=["eccentricity"],
+        categories=categories,
     )
 
     # ── Figure 5: SXS calibration-split mismatch CDFs (log x) ────────────
