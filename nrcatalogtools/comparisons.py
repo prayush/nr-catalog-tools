@@ -279,7 +279,7 @@ def _plot(
     fig, axes = plt.subplots(3, 1, figsize=(10, 11))
     fig.suptitle(
         f"{catalog_name}: {sim_name}\n"
-        f"q={params['mass1']/params['mass2']:.3f}  "
+        f"q={params['mass1'] / params['mass2']:.3f}  "
         f"χ₁z={params['spin1z']:.3f}  χ₂z={params['spin2z']:.3f}  "
         f"M={total_mass} M☉",
         fontsize=11,
@@ -428,14 +428,14 @@ def _plot(
 
 def _print_table(results, sim_name):
     w = 74
-    print(f"\n{'─'*w}")
+    print(f"\n{'─' * w}")
     print(f"  Mode-by-mode comparison: {sim_name} vs NRSur7dq4")
-    print(f"{'─'*w}")
+    print(f"{'─' * w}")
     print(
         f"  {'Mode':<10} {'Match':>10}  {'ΔΦ/cycle [rad]':>16}  "
         f"{'N_cycles':>10}  {'f_lower_mode':>14}"
     )
-    print(f"{'─'*w}")
+    print(f"{'─' * w}")
     for (ell, em) in NR_MODES:
         res = results.get((ell, em), {})
         mm = res.get("match", float("nan"))
@@ -450,4 +450,4 @@ def _print_table(results, sim_name):
             f"  ({ell},{em:+d})      {mm_str:>10}  {dp_str:>16}  "
             f"{nc_str:>10}  {fl_str:>14}"
         )
-    print(f"{'─'*w}\n")
+    print(f"{'─' * w}\n")
