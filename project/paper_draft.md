@@ -366,9 +366,9 @@ For SXS:BBH:0001 and SXS:BBH:0005, the NR simulation starts at $\sim 20$ Hz but 
 
 We extend the pilot analysis to all simulations in categories (a)–(d) across the SXS, RIT, and MAYA catalogs that fall within the NRSur7dq4 prior volume.  After metadata filtering, this yields 774 SXS, 686 RIT, and 188 MAYA simulations, for a total of 1,648 waveform comparisons.  We focus our discussion on the quasi-circular subsets (categories b and d) where the surrogate is expected to perform best, but report all categories.
 
-![Figure 1a: Match per mode vs. source parameters (mass ratio, effective spin, individual spins, initial eccentricity) for all simulations.](figs/fig1a_match_vs_params.png)
+![Figure 1a: Match per mode vs. source parameters (mass ratio, effective spin, individual spins, initial eccentricity) for all simulations.](figs/fig1a_mismatch_vs_params.png)
 
-![Figure 1b: Match per mode vs. source parameters for the quasi-circular (categories b+d) subset.](figs/fig1b_match_vs_params_qc.png)
+![Figure 1b: Match per mode vs. source parameters for the quasi-circular (categories b+d) subset.](figs/fig1b_mismatch_vs_params_qc.png)
 
 **Table V. Per-mode match statistics (median / 10th percentile) for quasi-circular systems (categories b+d).**
 
@@ -385,22 +385,20 @@ We extend the pilot analysis to all simulations in categories (a)–(d) across t
 
 The SXS (2,2) match distribution is tightly concentrated near unity: median 0.9923, 90th percentile 0.9945, with the 10th percentile at 0.9496.  The tail below 0.95 consists primarily of (i) short NR simulations (few cycles, low SNR) and (ii) high-mass-ratio, high-spin cases near the edge of the NRSur7dq4 prior.  
 
-The RIT (2,2) distribution is markedly broader: median 0.9231, 10th percentile only 0.494.  The CDF (Figure 3a, 6a) reveals a bimodal structure — a high-match peak near $\mathcal{F} \sim 0.99$ and a low-match population extending below 0.5.  Inspection of the parameter dependence (Figure 1a) shows that the low-match RIT simulations are concentrated at high $|$\chi_{\rm eff}|$ and $q \sim 4$, near the boundary of the surrogate's training domain; phase mismatch at the boundary is expected to be larger.
+The RIT (2,2) distribution is markedly broader: median 0.9231, 10th percentile only 0.494.  The CDF (Figure 3a, 5) reveals a bimodal structure — a high-match peak near $\mathcal{F} \sim 0.99$ and a low-match population extending below 0.5.  Inspection of the parameter dependence (Figure 1a) shows that the low-match RIT simulations are concentrated at high $|$\chi_{\rm eff}|$ and $q \sim 4$, near the boundary of the surrogate's training domain; phase mismatch at the boundary is expected to be larger.
 
-![Figure 3a: Cumulative distribution functions (CDFs) of per-mode matches across the three catalogs for quasi-circular systems.](figs/fig3a_match_cdf.png)
+![Figure 3a: Cumulative distribution functions (CDFs) of per-mode matches across the three catalogs for quasi-circular systems.](figs/fig3a_mismatch_cdf.png)
 
 The MAYA (2,2) distribution is intermediate: median 0.9728, 10th percentile 0.8439, and 90th percentile 0.9794.  The small MAYA sample size (49 quasi-circular simulations) limits statistical precision but suggests systematically lower matches than SXS at comparable parameters.
 
-**SXS calibration vs. non-calibration.** The NRSur7dq4 surrogate was trained on 342 of the 579 SXS quasi-circular simulations analyzed here (337 in the CSV; the small discrepancy reflects the prior cut).  We test whether in-sample simulations show systematically higher matches.  The calibration subset has $(2,2)$ median 0.9926 and 10th percentile 0.9899 (nearly uniform distribution above 0.985).  The non-calibration subset has the same median (0.9919) but a much wider lower tail: 10th percentile 0.360.  This is the expected behaviour: NRSur7dq4 by construction interpolates its training set with near-zero error, so all calibration simulations achieve near-perfect match.  The non-calibration sims test the surrogate's generalization ability; most achieve high match, but a minority fall below 0.95, indicating regions of the parameter space where the sparse training grid limits interpolation accuracy.  Figures 6a–b display these two populations separately for each mode.
+**SXS calibration vs. non-calibration.** The NRSur7dq4 surrogate was trained on 342 of the 579 SXS quasi-circular simulations analyzed here (337 in the CSV; the small discrepancy reflects the prior cut).  We test whether in-sample simulations show systematically higher matches.  The calibration subset has $(2,2)$ median 0.9926 and 10th percentile 0.9899 (nearly uniform distribution above 0.985).  The non-calibration subset has the same median (0.9919) but a much wider lower tail: 10th percentile 0.360.  This is the expected behaviour: NRSur7dq4 by construction interpolates its training set with near-zero error, so all calibration simulations achieve near-perfect match.  The non-calibration sims test the surrogate's generalization ability; most achieve high match, but a minority fall below 0.95, indicating regions of the parameter space where the sparse training grid limits interpolation accuracy.  Figure 5 displays these two populations separately for each mode.
 
-![Figure 6a: CDF of per-mode matches for the SXS calibration (in-sample) vs. non-calibration (out-of-sample) quasi-circular subsets.](figs/fig6a_sxs_cal_match_cdf.png)
-
-![Figure 6b: CDF of mismatches (1 - F) for the SXS calibration vs. non-calibration quasi-circular subsets.](figs/fig6b_sxs_cal_mismatch_cdf.png)
+![Figure 5: CDF of mismatches (1 - F) for the SXS calibration vs. non-calibration quasi-circular subsets.](figs/fig5_sxs_cal_mismatch_cdf.png)
 
 
 #### D.2 Sub-dominant modes
 
-Sub-dominant mode behaviour is substantially more variable across catalogs than the dominant $(2,2)$ mode.  Several patterns emerge from Table V and Figures 1a, 3b, 5a:
+Sub-dominant mode behaviour is substantially more variable across catalogs than the dominant $(2,2)$ mode.  Several patterns emerge from Table V and Figures 1a, 3b, and 5:
 
 **SXS** shows high median matches for $(3,3)$ (0.987) and $(4,4)$ (0.982) but a substantially lower median for $(4,3)$ (0.671) and a wide spread for $(2,1)$ (0.854) and $(3,2)$ (0.858).  The wide spread in odd-$m$ modes reflects the binary-symmetry mechanism discussed in Section IV.C: equal-mass, non-spinning systems contribute near-zero amplitudes in odd-$m$ modes, making their matches numerically ill-defined.
 
@@ -432,9 +430,9 @@ The phase-difference metric (Figures 2a, 2b) provides complementary diagnostic p
 
 ![Figure 2b: Phase difference per cycle vs. parameters for the quasi-circular subset.](figs/fig2b_phasediff_vs_params_qc.png)
 
-![Figure 3c: Cumulative distribution functions (CDFs) of phase difference per cycle across the three catalogs.](figs/fig3c_phasediff_cdf.png)
+![Figure 3b: Cumulative distribution functions (CDFs) of phase difference per cycle across the three catalogs.](figs/fig3b_phasediff_cdf.png)
 
-![Figure 4: Mismatch heatmap in the (q, chi_eff) parameter space for the dominant (2,2) mode across SXS, RIT, and MAYA.](figs/fig4_match22_heatmap_qc.png)
+![Figure 4: Mismatch heatmap in the (q, chi_eff) parameter space for the dominant (2,2) mode across SXS, RIT, and MAYA.](figs/fig4_mismatch22_heatmap_qc.png)
 
 
 ---

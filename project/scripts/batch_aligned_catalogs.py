@@ -40,17 +40,20 @@ warnings.filterwarnings("ignore")
 import numpy as np
 
 _SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, _SCRIPTS_DIR)
 sys.path.insert(0, os.path.join(_SCRIPTS_DIR, "..", ".."))
 
-from surrogate_utils import (
+from nrcatalogtools.surrogate import (
     generate_surrogate_modes,
     check_surrogate_prior,
     SURROGATE_MODES,
     load_nrsur7dq4,
 )
-from match_utils import compute_mode_match, compute_phase_diff_per_cycle, mode_f_lower
-from catalog_utils import load_catalog
+from nrcatalogtools.waveform.matching import (
+    compute_mode_match,
+    compute_phase_diff_per_cycle,
+    mode_f_lower,
+)
+from nrcatalogtools import load_catalog
 
 # ── Constants ────────────────────────────────────────────────────────────────
 

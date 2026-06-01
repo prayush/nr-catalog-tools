@@ -25,12 +25,15 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 _SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, _SCRIPTS_DIR)
 sys.path.insert(0, os.path.join(_SCRIPTS_DIR, "..", ".."))
 
-from surrogate_utils import generate_surrogate_modes, SURROGATE_MODES
-from match_utils import compute_mode_match, compute_phase_diff_per_cycle, mode_f_lower
-from catalog_utils import load_catalog
+from nrcatalogtools.surrogate import generate_surrogate_modes, SURROGATE_MODES
+from nrcatalogtools.waveform.matching import (
+    compute_mode_match,
+    compute_phase_diff_per_cycle,
+    mode_f_lower,
+)
+from nrcatalogtools import load_catalog
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
