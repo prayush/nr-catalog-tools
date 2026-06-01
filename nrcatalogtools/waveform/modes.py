@@ -875,6 +875,9 @@ class WaveformModes(sxs_WaveformModes):
         f_lower,
         f_upper=None,
         delta_t=1.0 / 4096,
+        return_rotation=False,
+        total_mass=1.0,
+        distance=1.0,
     ):
         """Calculate the match between this waveform and another, maximized
         over time shift, phase shift, and SO(3) rotation.
@@ -888,70 +891,168 @@ class WaveformModes(sxs_WaveformModes):
         f_upper : float, optional
         delta_t : float, optional
             Sample spacing in physical seconds (default 1/4096).
+        return_rotation : bool, optional
+            If True, return the optimal rotation quaternion.
+        total_mass : float, optional
+            Total mass in solar masses (default 1.0).
+        distance : float, optional
+            Luminosity distance in Mpc (default 1.0).
 
         Returns
         -------
-        float
-            Maximum match value in [0, 1].
+        float or tuple
+            Maximum match value in [0, 1] (or tuple with rotation).
         """
-        from scipy.optimize import minimize
+        import numpy as np
+        from scipy.optimize import differential_evolution
+        from scipy.fft import fft, ifft
+        import quaternionic
+        import spherical
+
+        # Compute overlapping frequency range
+        df = psd.delta_f
+        low_idx = int(f_lower / df) if f_lower else 0
+        high_idx = int(np.ceil(f_upper / df)) if f_upper else len(psd)
+
+        if isinstance(other, dict):
+            other_LM = list(other.keys())
+        else:
+            other_LM = list(map(tuple, other.LM))
+
+        common_modes = set(map(tuple, self.LM)) & set(other_LM)
+        if not common_modes:
+            return (0.0, None) if return_rotation else 0.0
+
+        h1_ts_dict = {}
+        h2_ts_dict = {}
+
+        # Load modes and align lengths
+        for ell, m in common_modes:
+            h1_ts_dict[(ell, m)] = self.get_mode(
+                ell,
+                m,
+                total_mass=total_mass,
+                distance=distance,
+                to_pycbc=True,
+                delta_t_seconds=delta_t,
+            )
+            if isinstance(other, dict):
+                h2_ts_dict[(ell, m)] = other[(ell, m)]
+            else:
+                h2_ts_dict[(ell, m)] = other.get_mode(
+                    ell,
+                    m,
+                    total_mass=total_mass,
+                    distance=distance,
+                    to_pycbc=True,
+                    delta_t_seconds=delta_t,
+                )
+
+        # Determine required length to match PSD's delta_f
+        N_pad = int(np.round(1.0 / (df * delta_t)))
+
+        # Build two-sided PSD array
+        psd_full = np.ones(N_pad) * np.inf
+        psd_len = N_pad // 2 + 1
+        for i in range(low_idx, min(high_idx, len(psd))):
+            if i < psd_len:
+                val = psd.data[i]
+                if val > 0:
+                    psd_full[i] = val
+                    if i > 0 and (N_pad - i) < N_pad:
+                        psd_full[N_pad - i] = val
+
+        # Compute full complex FFTs, zero-padded to N_pad
+        h1_f_dict = {}
+        h2_f_dict = {}
+        for k in common_modes:
+            ts1 = h1_ts_dict[k].data
+            ts2 = h2_ts_dict[k].data
+
+            # Zero-pad arrays to N_pad
+            pad1 = np.zeros(N_pad, dtype=complex)
+            pad2 = np.zeros(N_pad, dtype=complex)
+
+            pad1[: len(ts1)] = ts1
+            pad2[: len(ts2)] = ts2
+
+            h1_f_dict[k] = fft(pad1)
+            h2_f_dict[k] = fft(pad2)
+
+        wigner = spherical.Wigner(self.ell_max)
+        ells_in_common = set(ell for ell, m in common_modes)
 
         def objective_function(x):
-            time_shift, phi_c, alpha, beta, gamma = x
+            phi_c, alpha, beta, gamma = x
             R = quaternionic.array.from_euler_angles(alpha, beta, gamma)
-            other_rot = other.rotated(R)
+            D_full = wigner.D(R)
 
-            total_inner_prod = 0.0
             total_norm1_sq = 0.0
             total_norm2_sq = 0.0
-
-            common_modes = set(map(tuple, self.LM)) & set(map(tuple, other_rot.LM))
-
-            for ell, m in common_modes:
-                h1_mode_ts = self.get_mode(
-                    ell, m, to_pycbc=True, delta_t_seconds=delta_t
-                )
-                h2_mode_ts = other_rot.get_mode(
-                    ell, m, to_pycbc=True, delta_t_seconds=delta_t
-                )
-                if len(h1_mode_ts) > len(h2_mode_ts):
-                    h2_mode_ts.resize(len(h1_mode_ts))
-                else:
-                    h1_mode_ts.resize(len(h2_mode_ts))
-
-                psd.resize(len(h1_mode_ts.to_frequencyseries()))
-
-                h1_tilde = h1_mode_ts.to_frequencyseries(delta_f=psd.delta_f)
-                h2_tilde = h2_mode_ts.to_frequencyseries(delta_f=psd.delta_f)
-
-                h2_tilde *= np.exp(-1j * m * phi_c)
-                freqs = h2_tilde.sample_frequencies
-                h2_tilde.data *= np.exp(-2j * np.pi * freqs * time_shift)
-
-                df = psd.delta_f
-                low_idx = int(f_lower / df) if f_lower else 0
-                high_idx = int(np.ceil(f_upper / df)) if f_upper else len(psd)
-
-                h1 = h1_tilde.data[low_idx:high_idx]
-                h2 = h2_tilde.data[low_idx:high_idx]
-                psd_vals = psd.data[low_idx:high_idx]
-                psd_vals[np.isinf(psd_vals)] = 1.0
-
-                total_norm1_sq += 4 * df * np.sum((np.abs(h1) ** 2) / psd_vals)
-                total_norm2_sq += 4 * df * np.sum((np.abs(h2) ** 2) / psd_vals)
-                total_inner_prod += 4 * df * np.sum((h1 * np.conj(h2)) / psd_vals)
+            for k in common_modes:
+                total_norm1_sq += df * np.sum((np.abs(h1_f_dict[k]) ** 2) / psd_full)
+                total_norm2_sq += df * np.sum((np.abs(h2_f_dict[k]) ** 2) / psd_full)
 
             if total_norm1_sq == 0 or total_norm2_sq == 0:
                 return 1.0
 
-            overlap = np.abs(total_inner_prod) / np.sqrt(
-                total_norm1_sq * total_norm2_sq
-            )
+            I_f_full = np.zeros(N_pad, dtype=complex)
+
+            for ell in ells_in_common:
+                D_ell = np.zeros((2 * ell + 1, 2 * ell + 1), dtype=complex)
+                for i, m in enumerate(range(-ell, ell + 1)):
+                    for j, mp in enumerate(range(-ell, ell + 1)):
+                        D_ell[i, j] = D_full[wigner.Dindex(ell, m, mp)]
+
+                h2_matrix = np.zeros((N_pad, 2 * ell + 1), dtype=complex)
+                for i, m in enumerate(range(-ell, ell + 1)):
+                    if (ell, m) in h2_f_dict:
+                        h2_matrix[:, i] = h2_f_dict[(ell, m)]
+
+                h2_rot_matrix = h2_matrix @ D_ell
+
+                for j, m in enumerate(range(-ell, ell + 1)):
+                    if (ell, m) not in common_modes:
+                        continue
+                    term = (
+                        h1_f_dict[(ell, m)] * np.conj(h2_rot_matrix[:, j])
+                    ) / psd_full
+                    term *= np.exp(1j * m * phi_c)
+                    I_f_full += term
+
+            _q = ifft(I_f_full)
+            max_inner_prod = df * N_pad * np.max(np.real(_q))
+
+            overlap = max_inner_prod / np.sqrt(total_norm1_sq * total_norm2_sq)
+            if np.isnan(overlap):
+                return 1.0
+
             return 1.0 - overlap
 
-        x0 = [0.0, 0.0, 0.0, 0.0, 0.0]
-        result = minimize(objective_function, x0, method="Nelder-Mead")
-        return 1.0 - result.fun
+        bounds = [(0, 2 * np.pi), (0, 2 * np.pi), (0, np.pi), (0, 2 * np.pi)]
+
+        identity_mismatch = objective_function([0.0, 0.0, 0.0, 0.0])
+        print(
+            f"      [DEBUG] Sphere-averaged match at Identity Rotation: {1.0 - identity_mismatch:.6f}"
+        )
+
+        result = differential_evolution(
+            objective_function,
+            bounds,
+            popsize=10,
+            maxiter=50,
+            tol=1e-3,
+            mutation=(0.5, 1.0),
+            recombination=0.7,
+        )
+        match = 1.0 - result.fun
+
+        if return_rotation:
+            R_opt = quaternionic.array.from_euler_angles(
+                result.x[1], result.x[2], result.x[3]
+            )
+            return match, R_opt
+        return match
 
     def match_sphere_averaged_bms_maximized(
         self,
