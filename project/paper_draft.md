@@ -150,25 +150,25 @@ To structure the comparison across catalogs, we classify every simulation accord
 
 with thresholds $\varepsilon_\chi = 0.001$ and $\varepsilon_e = 0.005$.
 
-**Catalog counts.** Table IV shows the number of simulations per category for each catalog, restricted to the NRSur7dq4 prior volume ($q \leq 4$, $|\chi_{1,2}| \leq 0.8$) after metadata filtering.
+**Catalog counts.** Table IV shows both the total simulation count in each catalog and the number of simulations within the NRSur7dq4 prior volume ($q \leq 4$, $|\chi_{1,2}| \leq 0.8$, and $e = 0$) shown in parentheses. For the SXS catalog, the parenthesis additionally includes the number of simulations used directly for surrogate calibration, using the format: $N_{\rm total}~(N_{\rm calibration}, N_{\rm prior})$ after metadata filtering.
 
-**Table IV. Simulation counts within the NRSur7dq4 prior volume.**
+**Table IV. Total simulation counts, calibration counts (SXS only), and counts within the NRSur7dq4 prior volume (shown in parentheses).**
 
 | Category | SXS | RIT | MAYA |
 |---|---|---|---|
-| (a) non-spinning eccentric | 206 | 392 | 53 |
-| (b) non-spinning quasi-circular | 177 | 54 | 23 |
-| (c) aligned eccentric | 21 | 231 | 86 |
-| (d) aligned quasi-circular | 687 | 541 | 26 |
-| (e) precessing eccentric | 30 | 117 | 303 |
-| (f) precessing quasi-circular | 3043 | 437 | 67 |
-| **Total (all categories)** | **4164** | **1772** | **558** |
+| (a) non-spinning eccentric | 206 (0, 0) | 499 (0) | 74 (0) |
+| (b) non-spinning quasi-circular | 177 (60, 123) | 54 (35) | 34 (25) |
+| (c) aligned eccentric | 21 (0, 0) | 231 (0) | 117 (0) |
+| (d) aligned quasi-circular | 687 (282, 464) | 541 (199) | 40 (26) |
+| (e) precessing eccentric | 30 (0, 0) | 117 (0) | 303 (0) |
+| (f) precessing quasi-circular | 3043 (1389, 1962) | 437 (25) | 67 (49) |
+| **Total (all categories)** | **4164 (1731, 2549)** | **1879 (259)** | **635 (100)** |
 
 Several catalog-specific features are highly noteworthy and reflect the distinct parameter-space exploration strategies of the respective collaboration groups as summarized in the `nr-catalog-tools/catalog_organization` subdirectories:
 
-1. **SXS Catalog**: The SXS catalog is heavily dominated by the precessing quasi-circular (f) category (3,043 simulations), representing the massive, systematic parameter-space coverage required for training and validating high-accuracy quasi-circular precessing models such as `NRSur7dq4` and other precessing templates. Non-spinning eccentric (a) and aligned quasi-circular (d) simulations have moderate representation (206 and 687 simulations respectively). However, eccentric precessing (category e, 30 simulations) and aligned eccentric (category c, 21 simulations) configurations are highly underrepresented, representing a relative gap in SpEC's eccentric exploration.
-2. **RIT Catalog**: The RIT catalog exhibits a highly diverse distribution across the subcategories. It has the largest non-spinning eccentric (a) sample (392 simulations) and aligned-spin eccentric (c) sample (231 simulations). Combined with a large aligned quasi-circular (d) population of 541 simulations and a precessing quasi-circular (f) population of 437 simulations, the RIT catalog represents an exceptionally well-rounded catalog for testing eccentric, non-spinning, and aligned-spin waveforms, providing excellent physical parameter coverage.
-3. **MAYA Catalog**: The MAYA catalog is highly specialized, dominated heavily by precessing-eccentric configurations (category e, 303 simulations). This represents a deliberate, large-scale systematic search of the eccentric precessing parameter space using the Einstein Toolkit and MayaKranc code. In contrast, quasi-circular aligned-spin (d, 26 simulations) and non-spinning quasi-circular (b, 23 simulations) systems are much less represented, demonstrating MAYA's complementary scientific focus on eccentric precessing dynamics.
+1. **SXS Catalog**: The SXS catalog is heavily dominated by the precessing quasi-circular (f) category (3,043 total simulations, 1,389 of which were used to calibrate `NRSur7dq4` and 1,962 of which are in-prior), representing the massive, systematic parameter-space coverage required for training and validating high-accuracy quasi-circular precessing models such as `NRSur7dq4` and other precessing templates. Non-spinning eccentric (a) and aligned quasi-circular (d) simulations have moderate representation (206 and 687 total simulations respectively; 0 and 464 in-prior, with 282 aligned quasi-circular calibration simulations). However, eccentric precessing (category e, 30 total simulations, 0 in-prior) and aligned eccentric (category c, 21 total simulations, 0 in-prior) configurations are highly underrepresented, representing a relative gap in SpEC's eccentric exploration.
+2. **RIT Catalog**: The RIT catalog exhibits a highly diverse distribution across the subcategories. It has the largest non-spinning eccentric (a) sample (499 total simulations, 0 in-prior) and aligned-spin eccentric (c) sample (231 total simulations, 0 in-prior). Combined with a large aligned quasi-circular (d) population of 541 total simulations (199 in-prior) and a precessing quasi-circular (f) population of 437 total simulations (25 in-prior), the RIT catalog represents an exceptionally well-rounded catalog for testing eccentric, non-spinning, and aligned-spin waveforms, providing excellent physical parameter coverage.
+3. **MAYA Catalog**: The MAYA catalog is highly specialized, dominated heavily by precessing-eccentric configurations (category e, 303 total simulations, 0 in-prior). This represents a deliberate, large-scale systematic search of the eccentric precessing parameter space using the Einstein Toolkit and MayaKranc code. In contrast, quasi-circular aligned-spin (d, 40 total simulations, 26 in-prior) and non-spinning quasi-circular (b, 34 total simulations, 25 in-prior) systems are much less represented, demonstrating MAYA's complementary scientific focus on eccentric precessing dynamics.
 
 **NRSur7dq4 calibration sub-classification.** A key feature of the SXS catalog is that 1,731 of its simulations were used as training data for the NRSur7dq4 surrogate~\cite{nrsur7dq4}: 60 in category (b), 282 in category (d), and 1,389 in category (f).  All calibration simulations are quasi-circular ($e = 0$) by the surrogate's training design.  Categories (a), (c), and (e) contain no calibration simulations.  This stratification is recorded in the `catalog_organization/sxs_classification.json` file as a per-simulation boolean flag, propagated into the results CSV, and used to split the SXS analysis into calibration (in-sample) and non-calibration (out-of-sample) subsets.
 
