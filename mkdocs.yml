@@ -18,6 +18,8 @@ nav:
       - sxs: api/sxs.md
       - maya: api/maya.md
       - waveform: api/waveform.md
+      - surrogate: api/surrogate.md
+      - comparisons: api/comparisons.md
       - metadata: api/metadata.md
       - registry: api/registry.md
       - lvc: api/lvc.md
