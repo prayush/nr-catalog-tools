@@ -6,7 +6,22 @@ be unit-tested and used independently of the class.
 
 import numpy as np
 import spherical
+from pycbc.types import TimeSeries as pycbc_TimeSeries
 from sxs import TimeSeries as sxs_TimeSeries
+
+try:
+    from pycbc.waveform.utils import taper_timeseries as _pycbc_taper
+
+    def _taper(ts):
+        return _pycbc_taper(ts, tapermethod="startend", return_lal=False)
+
+except ImportError:
+    from scipy.signal.windows import tukey as _tukey
+
+    def _taper(ts):
+        win = _tukey(len(ts), alpha=0.1).astype(np.float64)
+        data = np.array(ts) * win
+        return pycbc_TimeSeries(data, delta_t=ts.delta_t, epoch=ts.start_time)
 
 
 def apply_wigner_rotation_to_mode_dict(mode_dict, R, ell_max=4):
@@ -160,12 +175,8 @@ def compute_mode_match(
     h_nr_sliced = h_nr.time_slice(t_start, t_end)
     h_sur_sliced = h_sur.time_slice(t_start, t_end)
 
-    from pycbc.waveform.utils import taper_timeseries
-
-    h1_tapered = taper_timeseries(h_nr_sliced, tapermethod="startend", return_lal=False)
-    h2_tapered = taper_timeseries(
-        h_sur_sliced, tapermethod="startend", return_lal=False
-    )
+    h1_tapered = _taper(h_nr_sliced)
+    h2_tapered = _taper(h_sur_sliced)
 
     raw_len = max(len(h1_tapered), len(h2_tapered))
     n_fft = 1
