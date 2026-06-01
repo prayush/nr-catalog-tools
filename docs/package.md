@@ -36,15 +36,23 @@ See [goal.md](goal.md) for the full scientific formalism.
 ```
 nrcatalogtools/
 ├── __init__.py        # Public exports: MayaCatalog, RITCatalog, SXSCatalog,
-│                      #   WaveformModes, apply_wigner_rotation_to_mode_dict
+│                      #   WaveformModes, apply_wigner_rotation_to_mode_dict,
+│                      #   load_catalog, filter_by_surrogate_prior
 ├── catalog.py         # Abstract base class CatalogABC + CatalogBase
 ├── rit.py             # RITCatalog + RITCatalogHelper
 ├── sxs.py             # SXSCatalog
 ├── maya.py            # MayaCatalog
+├── surrogate.py       # NRSur7dq4 loading and evaluation
+│                      #   load_nrsur7dq4, generate_surrogate_modes,
+│                      #   check_surrogate_prior, SURROGATE_MODES, NR_MODES
+├── comparisons.py     # NR vs surrogate comparison pipeline
+│                      #   compare_sim_vs_surrogate, DELTA_T
 ├── waveform/          # WaveformModes sub-package
 │   ├── modes.py       #   WaveformModes class
 │   ├── loaders.py     #   load_from_h5, load_from_targz
-│   ├── matching.py    #   match_sphere_averaged, bms_maximized variant
+│   ├── matching.py    #   apply_wigner_rotation_to_mode_dict,
+│   │                  #   load_psd, compute_mode_match,
+│   │                  #   compute_phase_diff_per_cycle, mode_f_lower
 │   └── units.py       #   waveform-level unit helpers
 ├── metadata.py        # get_source_parameters_from_metadata()
 ├── lvc.py             # Frame rotation helpers (check_interp_req,
@@ -349,7 +357,7 @@ Controlled by the `NR_CATALOG_CACHE` environment variable (defaults to `~/.cache
 | `spherical` | Wigner D-matrix computation |
 | `scipy` | `InterpolatedUnivariateSpline` for mode resampling |
 | `scri` | Spin-weighted Gaunt coefficients (optional; needed for BMS optimization) |
-| `gwsurrogate` | Surrogate model evaluation (used in analysis scripts, not the package itself) |
+| `gwsurrogate` | NRSur7dq4 surrogate evaluation (optional; required by `surrogate.py`) |
 
 ---
 
@@ -359,9 +367,15 @@ Controlled by the `NR_CATALOG_CACHE` environment variable (defaults to `~/.cache
 ```python
 import nrcatalogtools as nrcat
 
+# Using explicit class methods
 ritcat  = nrcat.RITCatalog.load(verbosity=0)
 sxscat  = nrcat.SXSCatalog.load(download=False, verbosity=0)
 mayacat = nrcat.MayaCatalog.load(verbosity=0)
+
+# Using the unified load_catalog() helper (case-insensitive)
+ritcat  = nrcat.load_catalog("RIT")
+sxscat  = nrcat.load_catalog("SXS")   # sets download=False automatically
+mayacat = nrcat.load_catalog("MAYA")
 ```
 
 ### Find q=1, non-spinning simulations
@@ -414,9 +428,77 @@ t_relax_dimless = wfm.time[0] + metadata["relaxed-time"]   # both in dimensionle
 f_relax = wfm.f_lower_at_1Msun(t=t_relax_dimless) / TOTAL_MASS   # Hz
 ```
 
+### Filter simulations by surrogate prior
+```python
+# Keep only simulations within the NRSur7dq4 validity volume
+# (q ∈ [1, 4], |χ₁|, |χ₂| ≤ 0.8)
+passing = nrcat.filter_by_surrogate_prior(ritcat, total_mass=40.0, verbose=True)
+```
+
+### Run the full NR vs NRSur7dq4 comparison for one simulation
+```python
+from nrcatalogtools.comparisons import compare_sim_vs_surrogate
+
+compare_sim_vs_surrogate(
+    catalog_name="RIT",
+    sim_name="RIT:BBH:0001-n100-id3",
+    total_mass=60.0,
+    psd_name="aLIGOZeroDetHighPower",
+    outdir="results/",
+    figsdir="figs/",
+)
+# Writes results/RIT_BBH_0001-n100-id3_matches.csv
+# and saves a per-mode match figure to figs/
+```
+
 ---
 
-## 11. Known Design Decisions and Gotchas
+## 11. `surrogate.py` — NRSur7dq4 Interface
+
+`nrcatalogtools.surrogate` provides a thin, package-native wrapper around
+[gwsurrogate](https://github.com/sxs-collaboration/gwsurrogate)'s NRSur7dq4 model.
+`gwsurrogate` is an **optional** dependency; the rest of the package imports fine without it.
+
+### Key functions
+
+| Function | Description |
+|----------|-------------|
+| `load_nrsur7dq4()` | Load and cache the surrogate singleton (calls `gwsurrogate.LoadSurrogate("NRSur7dq4")` once). |
+| `generate_surrogate_modes(params, total_mass, distance, delta_t_seconds)` | Evaluate NRSur7dq4 and return `dict[(ell,em) → complex PyCBC TimeSeries]` in physical units. |
+| `check_surrogate_prior(params, q_max=4.0, chi_max=0.8)` | Return `True` if the simulation lies within the surrogate validity region. |
+
+### Constants
+
+| Name | Value | Description |
+|------|-------|-------------|
+| `SURROGATE_MODES` | `[(2,1),(2,2),(3,2),(3,3),(4,3),(4,4)]` | Modes output by NRSur7dq4 (ell ≤ 4, positive m only) |
+| `NR_MODES` | superset of above + `(5,5)` | Modes present in NR catalogs |
+| `_SURROGATE_F_MIN_CYCLES_PER_M` | `0.0165` | Minimum $M\Omega$ for NRSur7dq4 training |
+
+### `f_ref` clipping
+
+When the NR starting frequency is below the surrogate's training minimum, `generate_surrogate_modes` clips `f_ref` to `_SURROGATE_F_MIN_CYCLES_PER_M` and retries.  For aligned-spin and non-spinning systems this has no effect on accuracy because spin components are constant in the absence of precession.
+
+---
+
+## 12. `comparisons.py` — NR vs Surrogate Pipeline
+
+`nrcatalogtools.comparisons.compare_sim_vs_surrogate` runs the complete per-simulation NR accuracy pipeline:
+
+1. Load catalog waveform via `load_catalog(catalog_name)`.
+2. Check surrogate prior; skip simulations outside the validity region.
+3. Call `generate_surrogate_modes` to produce physical-unit surrogate modes.
+4. Optionally rotate surrogate modes into the NR frame via `apply_wigner_rotation_to_mode_dict`.
+5. Compute per-mode noise-weighted match (`compute_mode_match`) and phase drift (`compute_phase_diff_per_cycle`) for each mode in `NR_MODES`.
+6. Write a CSV row and save a figure.
+
+**Output CSV columns:** `sim_name`, `total_mass`, `(ell,em)_match`, `(ell,em)_phase_diff_per_cycle` for each mode.
+
+**Defaults:** `delta_t = 1/4096 s`, `distance = 1 Mpc` (amplitude-irrelevant for match), `psd = "aLIGOZeroDetHighPower"`, output directories default to `./results/` and `./figs/` relative to the working directory.
+
+---
+
+## 13. Known Design Decisions and Gotchas
 
 ### SXS path resolution is lazy
 `SXSCatalog._add_paths_to_metadata()` sets all path columns to empty strings at catalog-load time, because resolving real on-disk paths requires calling `sxs.load(sim_name)` for every simulation which would trigger ~2000 network requests. Actual file access happens inside `SXSCatalog.get()` through the `sxs` package's own caching.

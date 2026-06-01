@@ -49,6 +49,10 @@ utilities for loading, rotating, and matching NR waveforms.
       members:
         - apply_wigner_rotation_to_mode_dict
         - interpolate_in_amp_phase
+        - mode_f_lower
+        - load_psd
+        - compute_mode_match
+        - compute_phase_diff_per_cycle
 
 ---
 
