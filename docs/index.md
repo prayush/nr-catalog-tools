@@ -56,20 +56,28 @@ See [goal.md](goal.md) for the full scientific derivation.
 
 ```
 nrcatalogtools/
-├── __init__.py     # Public API: MayaCatalog, RITCatalog, SXSCatalog,
-│                   #   WaveformModes, apply_wigner_rotation_to_mode_dict
-├── catalog.py      # Abstract base CatalogABC + shared CatalogBase
-├── rit.py          # RITCatalog + RITCatalogHelper
-├── sxs.py          # SXSCatalog
-├── maya.py         # MayaCatalog
-├── waveform/       # WaveformModes sub-package
-│   ├── modes.py    #   WaveformModes class
-│   ├── loaders.py  #   load_from_h5, load_from_targz
-│   ├── matching.py #   match_sphere_averaged, match_sphere_averaged_bms_maximized
-│   └── units.py    #   time_to_physical, amp_to_physical (waveform-level)
-├── metadata.py     # get_source_parameters_from_metadata()
-├── lvc.py          # Frame-rotation helpers
-└── utils.py        # Cache paths, download helpers, unit conversions
+├── __init__.py      # Public API: MayaCatalog, RITCatalog, SXSCatalog,
+│                    #   WaveformModes, apply_wigner_rotation_to_mode_dict,
+│                    #   load_catalog, filter_by_surrogate_prior
+├── catalog.py       # Abstract base CatalogABC + shared CatalogBase
+├── rit.py           # RITCatalog + RITCatalogHelper
+├── sxs.py           # SXSCatalog
+├── maya.py          # MayaCatalog
+├── surrogate.py     # NRSur7dq4 loading, evaluation, prior check
+│                    #   load_nrsur7dq4, generate_surrogate_modes,
+│                    #   check_surrogate_prior, SURROGATE_MODES, NR_MODES
+├── comparisons.py   # End-to-end NR vs surrogate comparison pipeline
+│                    #   compare_sim_vs_surrogate, DELTA_T
+├── waveform/        # WaveformModes sub-package
+│   ├── modes.py     #   WaveformModes class
+│   ├── loaders.py   #   load_from_h5, load_from_targz
+│   ├── matching.py  #   apply_wigner_rotation_to_mode_dict,
+│   │                #   load_psd, compute_mode_match,
+│   │                #   compute_phase_diff_per_cycle, mode_f_lower
+│   └── units.py     #   time_to_physical, amp_to_physical (waveform-level)
+├── metadata.py      # get_source_parameters_from_metadata()
+├── lvc.py           # Frame-rotation helpers
+└── utils.py         # Cache paths, download helpers, unit conversions
 ```
 
 ---
@@ -102,10 +110,14 @@ pip install nrcatalogtools
 ```python
 import nrcatalogtools as nrcat
 
-# Load catalogs
+# Load catalogs (explicit class methods)
 ritcat  = nrcat.RITCatalog.load()
 sxscat  = nrcat.SXSCatalog.load(download=False)
 mayacat = nrcat.MayaCatalog.load()
+
+# …or use the unified helper
+ritcat = nrcat.load_catalog("RIT")
+sxscat = nrcat.load_catalog("SXS")   # sets download=False automatically
 
 # Load a waveform
 wfm = ritcat.get("RIT:BBH:0003-n100-id0")
