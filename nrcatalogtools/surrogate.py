@@ -65,12 +65,12 @@ def load_nrsur7dq4():
     return _nrsur7dq4
 
 
-# Modes available from NRSur7dq4 (ellMax ≤ 4; (5,5) is not available).
-SURROGATE_MODES = [(2, 2), (2, 1), (3, 3), (4, 4), (3, 2), (4, 3)]
-
 # Full set of NR modes to include in the comparison table.  Modes absent from
 # the surrogate (e.g. (5,5)) will appear with match=NaN in the output.
 NR_MODES = [(2, 2), (2, 1), (3, 3), (4, 4), (5, 5), (3, 2), (4, 3)]
+
+# Positive-m modes produced by NRSur7dq4 (ellMax=4); subset of NR_MODES.
+SURROGATE_MODES = [(ell, em) for ell, em in NR_MODES if ell <= 4]
 
 # Approximate surrogate minimum frequency in cycles/M (= M * f_GW in seconds).
 # Derived from the known NRSur7dq4 minimum M*Omega_orbital ≈ 0.0165:
@@ -227,3 +227,54 @@ def check_surrogate_prior(
         params["spin2x"] ** 2 + params["spin2y"] ** 2 + params["spin2z"] ** 2
     )
     return chi1 <= chi_max and chi2 <= chi_max
+
+
+def surrogate_dict_to_waveform_modes(h_sur_dict: dict, ell_max: int = 4):
+    """Wrap a dictionary of pycbc mode TimeSeries into a WaveformModes object.
+
+    Parameters
+    ----------
+    h_sur_dict : dict
+        Dict mapping (ell, em) -> pycbc.TimeSeries.
+    ell_max : int, optional
+        Maximum ell value to support (default 4).
+
+    Returns
+    -------
+    WaveformModes
+    """
+    from nrcatalogtools.waveform.modes import WaveformModes
+
+    if not h_sur_dict:
+        raise ValueError("h_sur_dict is empty")
+
+    class SurrogateWaveformModes(WaveformModes):
+        def __init__(self, h_dict, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._h_dict = h_dict
+
+        def get_mode(self, ell, em, **kwargs):
+            return self._h_dict[(ell, em)]
+
+    # Extract time array from any mode
+    any_mode = next(iter(h_sur_dict.values()))
+    time_array = np.array(any_mode.sample_times)
+
+    # Calculate number of modes for ell_min=2
+    num_modes = (ell_max + 1) ** 2 - 4
+    data = np.zeros((len(time_array), num_modes), dtype=complex)
+
+    wfm = SurrogateWaveformModes(
+        h_sur_dict, data, time=time_array, ell_min=2, ell_max=ell_max
+    )
+
+    for (ell, m), ts in h_sur_dict.items():
+        if ell > ell_max or ell < 2:
+            continue
+        try:
+            idx = wfm.index(ell, m)
+            wfm.data[:, idx] = ts.data
+        except ValueError:
+            pass  # Ignore modes that are not within the index range
+
+    return wfm

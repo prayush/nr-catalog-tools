@@ -150,6 +150,9 @@ def compare_sim_vs_surrogate(
                 "phase_diff_per_cycle": float("nan"),
                 "n_cycles": float("nan"),
                 "match_rotated": None,
+                "R_alpha": None,
+                "R_beta": None,
+                "R_gamma": None,
             }
             continue
 
@@ -163,6 +166,9 @@ def compare_sim_vs_surrogate(
                 "phase_diff_per_cycle": float("nan"),
                 "n_cycles": float("nan"),
                 "match_rotated": None,
+                "R_alpha": None,
+                "R_beta": None,
+                "R_gamma": None,
             }
             continue
 
@@ -176,6 +182,9 @@ def compare_sim_vs_surrogate(
             "phase_diff_per_cycle": dphase,
             "n_cycles": n_cycles,
             "match_rotated": None,
+            "R_alpha": None,
+            "R_beta": None,
+            "R_gamma": None,
         }
         flag = "" if np.isnan(mm) else f"{mm:.6f}"
         dp_str = "N/A" if np.isnan(dphase) else f"{dphase:.4f} rad"
@@ -194,17 +203,28 @@ def compare_sim_vs_surrogate(
             psd_rot = load_psd(
                 f_lower_match, delta_t, max(dur_nr, dur_sur) * 1.1, psd_name=psd_name
             )
-            mm_rot = wfm.match_sphere_averaged(
+
+            mm_rot, R_opt = wfm.match_sphere_averaged(
                 h_sur,
                 psd=psd_rot,
                 f_lower=f_lower_match,
                 delta_t=delta_t,
+                return_rotation=True,
+                total_mass=total_mass,
+                distance=DISTANCE,
             )
             print(f"      SO(3)-optimized match = {mm_rot:.6f}")
+            alpha, beta, gamma = R_opt.to_euler_angles
             for key in results:
                 results[key]["match_rotated"] = mm_rot
+                results[key]["R_alpha"] = alpha
+                results[key]["R_beta"] = beta
+                results[key]["R_gamma"] = gamma
         except Exception as exc:
             print(f"      SO(3)-optimized match failed: {exc}")
+            import traceback
+
+            traceback.print_exc()
 
     # 6. Output
     print(f"[6/6] Writing outputs (results to {outdir}/, figures to {figsdir}/)...")
@@ -248,6 +268,9 @@ def _write_csv(results, sim_name, catalog_name, total_mass, params, outdir):
                 "match_rotated": res["match_rotated"]
                 if res["match_rotated"] is not None
                 else "",
+                "R_alpha": res["R_alpha"] if res["R_alpha"] is not None else "",
+                "R_beta": res["R_beta"] if res["R_beta"] is not None else "",
+                "R_gamma": res["R_gamma"] if res["R_gamma"] is not None else "",
             }
         )
     fieldnames = list(rows[0].keys())
