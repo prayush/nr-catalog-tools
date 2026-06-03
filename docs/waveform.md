@@ -160,11 +160,22 @@ Useful for rotating surrogate model outputs into the NR frame for direct compari
 
 ### `match_sphere_averaged(other, psd, f_lower, delta_t, ...)`
 
-Sky-averaged mismatch minimized over $t_c$, $\phi_c$, and $R \in SO(3)$:
+This method calculates the match (noise-weighted overlap) between two waveforms, integrated over the entire sphere of possible observer directions (sky-averaged) and maximized over coordinate time shift $t_c$, coalescence phase $\phi_c$, and active/passive $SO(3)$ rotation $R$.
 
-$$\mathcal{M} = 1 - \max_{t_c,\, \phi_c,\, R \in SO(3)} \frac{\langle h_1 | h_2 \rangle}{\sqrt{\langle h_1 | h_1 \rangle \langle h_2 | h_2 \rangle}}$$
+#### Spherical Integration & Mode-by-Mode Equivalence
+The overlap between the full multidimensional strain fields $h_1(t, \Omega)$ and $h_2(t, \Omega)$ over the sphere $S^2$ is defined as:
+$$\mathcal{O}_{\text{sphere}}(h_1, h_2) = \frac{\int_{S^2} \langle h_1(t, \Omega) \mid h_2(t, \Omega) \rangle_t \, d\Omega}{\sqrt{\left[ \int_{S^2} \langle h_1(t, \Omega) \mid h_1(t, \Omega) \rangle_t \, d\Omega \right] \left[ \int_{S^2} \langle h_2(t, \Omega) \mid h_2(t, \Omega) \rangle_t \, d\Omega \right]}}$$
 
-<!-- Mismatch = 1 - max over (time shift, phase shift, SO(3) rotation) of normalized inner product -->
+By expanding the strain fields in spin-weighted spherical harmonics ${}^{-2}Y_{\ell m}(\theta, \phi)$ and invoking their orthonormality:
+$$\int_{S^2} {}^{-2}Y_{\ell m}^*(\Omega) \, {}^{-2}Y_{\ell' m'}(\Omega) \, d\Omega = \delta_{\ell \ell'} \, \delta_{m m'}$$
+all cross-terms between different modes decouple and vanish. The integrated overlap simplifies to the sum of the mode-by-mode overlaps:
+$$\int_{S^2} \langle h_1(t, \Omega) \mid h_2(t, \Omega) \rangle_t \, d\Omega = \sum_{\ell, m} \langle h_{1, \ell m} \mid h_{2, \ell m} \rangle_t$$
+
+#### Extrinsic Optimization
+To align the coordinate frames, the second waveform is transformed via:
+$$h_{2, \ell m}^{\text{rot, shifted}}(t) = e^{-i m \phi_c} \sum_{m'=-\ell}^{\ell} h_{2, \ell m'}(t - t_c) \, D^{\ell}_{m' m}(R)$$
+where $D^\ell_{m'm}(R)$ is the Wigner D-matrix. The returned mismatch $\mathcal{M}$ is defined as:
+$$\mathcal{M} = 1 - \max_{t_c,\, \phi_c,\, R \in SO(3)} \left[ \frac{\sum_{\ell, m} \langle h_{1, \ell m} \mid h_{2, \ell m}^{\text{rot, shifted}}(t_c, \phi_c, R) \rangle_t}{\sqrt{\left( \sum_{\ell, m} \langle h_{1, \ell m} \mid h_{1, \ell m} \rangle_t \right) \left( \sum_{\ell, m} \langle h_{2, \ell m} \mid h_{2, \ell m} \rangle_t \right)}} \right]$$
 
 ```python
 mismatch = wfm_a.match_sphere_averaged(
@@ -177,13 +188,21 @@ mismatch = wfm_a.match_sphere_averaged(
 
 ### `match_sphere_averaged_bms_maximized(other, psd, f_lower, j_max, ...)`
 
-Extended version that additionally optimizes over BMS supertranslation coefficients:
+This extended method performs the optimization over the infinite-dimensional **BMS supertranslation** group at null infinity $\mathcal{I}^+$ in addition to the standard rigid rotations and shifts. 
 
-$$h'_{\ell m}(u) = h_{\ell m}(u) - \sum_{j,k,p,q} \alpha_{jk} \, \mathcal{G}^{\ell m}_{jk,pq} \, \dot{h}_{pq}(u)$$
+Supertranslations correspond to direction-dependent retarded-time shifts:
+$$u' = u - \alpha(\theta, \phi)$$
+where the supertranslation field $\alpha(\theta, \phi)$ is decomposed into scalar spherical harmonics:
+$$\alpha(\theta, \phi) = \sum_{j=0}^{j_{\text{max}}} \sum_{k=-j}^{j} \alpha_{jk} \, Y_{jk}(\theta, \phi)$$
+For small supertranslations, the waveform modes undergo first-order mixing:
+$$h'_{\ell m}(u) = h_{\ell m}(u) - \sum_{j=0}^{j_{\text{max}}} \sum_{k=-j}^{j} \sum_{p, q} \alpha_{jk} \, \mathcal{G}^{\ell m}_{jk,pq} \, \dot{h}_{pq}(u)$$
+where $\mathcal{G}^{\ell m}_{jk,pq}$ are the spin-weighted Gaunt coefficients:
+$$\mathcal{G}^{\ell m}_{jk,pq} = \int_{S^2} {}^{-2}Y_{\ell m}^*(\Omega) \, Y_{jk}(\Omega) \, {}^{-2}Y_{pq}(\Omega) \, d\Omega$$
 
-<!-- Modified strain = original strain minus sum over BMS supertranslation modes weighted by Gaunt coefficients -->
+This method optimizes $t_c$, $\phi_c$, $R \in SO(3)$, and the supertranslation coefficients $\alpha_{jk}$ (where $j=1$ shifts the coordinate origin to correct for center-of-mass drift, and $j \ge 2$ modes correct for proper supertranslations) using a Nelder-Mead simplex solver to find the global minimum mismatch.
 
-Requires the `scri` package for spin-weighted Gaunt coefficients.
+> [!NOTE]
+> The `scri` package is required to compute the spin-weighted Gaunt coupling coefficients $\mathcal{G}^{\ell m}_{jk,pq}$.
 
 ---
 

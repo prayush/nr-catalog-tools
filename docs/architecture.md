@@ -99,7 +99,7 @@ MayaCatalog.load()
 | `get_td_waveform(M, D, iota, phi, dt)` | Sky-averaged h₊+ih× summed over all modes |
 | `trim_to_relaxation_time(M)` | (2,2) mode starting at relaxation epoch |
 | `rotated(R)` | Wigner D-matrix rotation of all modes (inherited + overridden) |
-| `match_sphere_averaged(other, psd, f_lower)` | Mismatch minimized over t_c, φ_c, R∈SO(3) via Nelder-Mead |
+| `match_sphere_averaged(other, psd, f_lower)` | Mismatch minimized over t_c, φ_c, R∈SO(3) via differential evolution |
 | `match_sphere_averaged_bms_maximized(...)` | Same + BMS supertranslation optimization via spin-weighted Gaunt coefficients (`scri`) |
 
 ---
