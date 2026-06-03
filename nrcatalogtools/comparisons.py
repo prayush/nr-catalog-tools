@@ -114,10 +114,22 @@ def compare_sim_vs_surrogate(
         )
 
     # 3. Generate surrogate modes
-    print(f"[3/6] Generating NRSur7dq4 modes (M={total_mass} M☉, D={DISTANCE} Mpc)...")
-    h_sur, f_lower_sur = generate_surrogate_modes(
-        params, total_mass=total_mass, distance=DISTANCE, delta_t_seconds=delta_t
+    print(
+        f"[3/6] Generating NRSur7dq4 modes (M={total_mass:.1f} M☉, D={DISTANCE:.1f} Mpc)..."
     )
+    try:
+        h_sur, f_lower_sur = generate_surrogate_modes(
+            params,
+            total_mass,
+            DISTANCE,
+            delta_t_seconds=delta_t,
+            sim_name=sim_name,
+            catalog=cat,
+            nr_wfm=wfm,
+        )
+    except Exception as exc:
+        print(f"      Failed to generate surrogate: {exc}")
+        raise
     print(f"      Generated {len(h_sur)} surrogate modes.")
     if f_lower_sur > f_lower * 1.05:
         print(
@@ -194,7 +206,9 @@ def compare_sim_vs_surrogate(
         )
 
     if rotate:
-        print("[5b] Computing SO(3)-rotation-optimized match (Nelder-Mead)...")
+        print(
+            "[5b] Computing SO(3)-rotation-optimized match (differential evolution)..."
+        )
         try:
             from .waveform.matching import load_psd
 

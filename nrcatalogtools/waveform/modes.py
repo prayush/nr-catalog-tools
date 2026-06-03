@@ -879,29 +879,115 @@ class WaveformModes(sxs_WaveformModes):
         total_mass=1.0,
         distance=1.0,
     ):
-        """Calculate the match between this waveform and another, maximized
-        over time shift, phase shift, and SO(3) rotation.
+        r"""Calculate the match (noise-weighted overlap) between this waveform
+        and another, integrated over all observer directions on the sphere
+        (sky-averaged) and maximized over time shift, phase shift, and
+        active/passive SO(3) coordinate rotation of the source frame.
+
+        Mathematical Formulation
+        ------------------------
+        The full multi-mode gravitational-wave strain field $H(t, \theta, \phi) = h_+ - i h_\times$
+        as observed at polar angles $(\theta, \phi)$ in the source frame is:
+        $$
+        H(t, \theta, \phi) = \sum_{\ell=2}^{\infty} \sum_{m=-\ell}^{\ell}
+        h_{\ell m}(t) \, {}^{-2}Y_{\ell m}(\theta, \phi)
+        $$
+        where ${}^{-2}Y_{\ell m}$ are the spin-weight $-2$ spherical harmonics.
+
+        The global overlap between two waveforms $h_1$ and $h_2$, integrated over the entire
+        sphere of possible observer directions (sky locations), is defined as:
+        $$
+        \mathcal{O}_{\text{sphere}}(h_1, h_2) =
+        \frac{\int_{S^2} \langle h_1(t, \Omega) \mid h_2(t, \Omega) \rangle_t \, d\Omega}{
+        \sqrt{\left[ \int_{S^2} \langle h_1(t, \Omega) \mid h_1(t, \Omega) \rangle_t \,
+        d\Omega \right] \left[ \int_{S^2} \langle h_2(t, \Omega) \mid h_2(t, \Omega) \rangle_t \,
+        d\Omega \right]}}
+        $$
+        where $\langle \cdot \mid \cdot \rangle_t$ is the standard frequency-domain noise-weighted
+        inner product:
+        $$
+        \langle u \mid v \rangle_t = 4 \, \mathrm{Re}
+        \int_{f_{\mathrm{min}}}^{f_{\mathrm{max}}}
+        \frac{\tilde{u}(f) \, \tilde{v}^*(f)}{S_n(f)} \, df
+        $$
+
+        By utilizing the orthonormality of the spin-weighted spherical harmonics:
+        $$
+        \int_{S^2} {}^{-2}Y_{\ell m}^*(\Omega) \, {}^{-2}Y_{\ell' m'}(\Omega) \, d\Omega
+        = \delta_{\ell \ell'} \, \delta_{m m'}
+        $$
+        the angular integral decouples, simplifying the sphere-integrated inner product
+        into a simple sum over all common modes $(\ell, m)$:
+        $$
+        \int_{S^2} \langle h_1(t, \Omega) \mid h_2(t, \Omega) \rangle_t \, d\Omega
+        = \sum_{\ell, m} \langle h_{1, \ell m} \mid h_{2, \ell m} \rangle_t
+        $$
+
+        Coordinate Frame Optimization
+        -----------------------------
+        Because the two waveforms may be defined in different coordinate systems (source frames)
+        and have arbitrary reference times/phases, we align the target waveform $h_2$ to $h_1$
+        by active/passive rigid rotation $R \in SO(3)$, time translation $t_c$, and coalescence phase shift $\phi_c$:
+        1. **Rotation ($R$)**: Rotates the modes using Wigner D-matrices:
+           $$
+           h_{2, \ell m}^{\mathrm{rot}}(t) = \sum_{m'=-\ell}^{\ell} h_{2, \ell m'}(t) \, D^{\ell}_{m' m}(R)
+           $$
+
+        2. **Time Shift ($t_c$)**: Shifts time via $t \to t - t_c$,
+           implemented efficiently as a linear phase in the frequency domain.
+        3. **Phase Shift ($\phi_c$)**: Twist around the rotated $z$-axis via:
+           $$
+           h_{2, \ell m}^{\mathrm{rot, shifted}}(t) \to e^{-i m \phi_c} \, h_{2, \ell m}^{\mathrm{rot}}(t - t_c)
+           $$
+
+        The method then returns the maximized match (overlap):
+
+        $$
+        \mathcal{O}_{\mathrm{max}} = \max_{t_c, \phi_c, R \in SO(3)} \left[
+        \frac{
+            \sum_{\ell, m} \langle h_{1, \ell m} \mid
+            h_{2, \ell m}^{\mathrm{rot, shifted}}(t_c, \phi_c, R) \rangle_t
+        }{
+            \sqrt{
+                \left( \sum_{\ell, m} \langle h_{1, \ell m} \mid
+                h_{1, \ell m} \rangle_t \right)
+                \left( \sum_{\ell, m} \langle h_{2, \ell m} \mid
+                h_{2, \ell m} \rangle_t \right)
+            }
+        } \right]
+        $$
+
+        The maximization over $t_c$ is performed efficiently using Fast Fourier Transforms (FFTs),
+        $\phi_c$ is maximized analytically, and the SO(3) rotation $R$ (parameterized by
+        Euler angles $\alpha, \beta, \gamma$) is optimized using the differential evolution algorithm.
 
         Parameters
         ----------
-        other : WaveformModes
+        other : WaveformModes or dict
+            The second waveform to compare against. Can be a `WaveformModes` object or a dict
+            of PyCBC TimeSeries modes.
         psd : pycbc.types.FrequencySeries
+            One-sided noise power spectral density (PSD).
         f_lower : float
             Lower frequency cutoff in Hz.
         f_upper : float, optional
+            Upper frequency cutoff in Hz. If None, the Nyquist frequency of the PSD is used.
         delta_t : float, optional
             Sample spacing in physical seconds (default 1/4096).
         return_rotation : bool, optional
-            If True, return the optimal rotation quaternion.
+            If True, returns a tuple `(match, R_opt)` containing the maximum match and the
+            optimal quaternionic rotation.
         total_mass : float, optional
-            Total mass in solar masses (default 1.0).
+            Total mass of the binary system in solar masses (default 1.0).
         distance : float, optional
-            Luminosity distance in Mpc (default 1.0).
+            Luminosity distance to the source in Mpc (default 1.0).
 
         Returns
         -------
         float or tuple
-            Maximum match value in [0, 1] (or tuple with rotation).
+            If `return_rotation` is False, returns the maximum match value in $[0, 1]$.
+            If `return_rotation` is True, returns `(match, R_opt)` where `R_opt` is the
+            optimal `quaternionic.array` unit quaternion representing the rotation.
         """
         import numpy as np
         from scipy.optimize import differential_evolution
@@ -1062,24 +1148,65 @@ class WaveformModes(sxs_WaveformModes):
         f_upper=None,
         j_max=1,
     ):
-        """Match maximized over BMS supertranslations.
+        r"""Calculate the match maximized over BMS supertranslations in addition to
+        standard time shift, phase shift, and SO(3) rotation.
 
-        Extends ``match_sphere_averaged`` by also optimizing over the
-        coefficients of the BMS supertranslation field α(θ,φ).
+        BMS Supertranslation Mathematical Formulation
+        ---------------------------------------------
+        At null infinity $\mathcal{I}^+$, the asymptotic symmetry group of General Relativity
+        is the infinite-dimensional Bondi-Metzner-Sachs (BMS) group. This group is the
+        semi-direct product of the Lorentz group and the abelian group of **supertranslations**,
+        which correspond to direction-dependent shifts in the retarded time coordinate $u$:
+        $$
+        u' = u - \alpha(\theta, \phi)
+        $$
+        where the supertranslation field $\alpha(\theta, \phi)$ is an arbitrary smooth real
+        function on the sphere, decomposed into scalar spherical harmonics $Y_{j k}$:
+        $$
+        \alpha(\theta, \phi) = \sum_{j=0}^{j_{\mathrm{max}}} \sum_{k=-j}^{j} \alpha_{j k} \, Y_{j k}(\theta, \phi)
+        $$
+        Here, $j=0$ corresponds to a global time translation ($t_c$), $j=1$ corresponds to
+        spatial translations (origin shifts), and $j \ge 2$ modes correspond to proper
+        supertranslations.
+
+        Under a small supertranslation, the strain waveform modes $h_{\ell m}(u)$ undergo
+        first-order mode mixing:
+        $$
+        h'_{\ell m}(u) \approx h_{\ell m}(u) -
+        \sum_{j=0}^{j_{\mathrm{max}}} \sum_{k=-j}^{j} \sum_{p, q}
+        \alpha_{j k} \, \mathcal{G}^{\ell m}_{j k, p q} \, \dot{h}_{p q}(u)
+        $$
+        where $\dot{h}_{p q}(u) = \partial h_{p q} / \partial u$, and $\mathcal{G}^{\ell m}_{j k, p q}$
+        are the spin-weighted Gaunt coefficients (integrals of products of three spherical harmonics):
+        $$
+        \mathcal{G}^{\ell m}_{j k, p q} = \int_{S^2}
+        {}^{-2}Y_{\ell m}^*(\Omega) \, Y_{j k}(\Omega) \,
+        {}^{-2}Y_{p q}(\Omega) \, d\Omega
+        $$
+
+        This method optimizes both the rigid rotation $R \in SO(3)$, time translation $t_c$,
+        phase shift $\phi_c$, and the supertranslation coefficients $\alpha_{j k}$ for $j \ge 1$
+        up to `j_max` using the Nelder-Mead downhill simplex algorithm to minimize the mismatch
+        (maximize the overlap).
 
         Parameters
         ----------
         other : WaveformModes
+            The second waveform to compare against.
         psd : pycbc.types.FrequencySeries
+            One-sided noise power spectral density (PSD).
         f_lower : float
+            Lower frequency cutoff in Hz.
         f_upper : float, optional
+            Upper frequency cutoff in Hz. If None, the Nyquist frequency of the PSD is used.
         j_max : int, optional
-            Max spherical-harmonic order of the supertranslation field (default 1).
+            Maximum spherical-harmonic order of the supertranslation field to optimize
+            (default 1, which corresponds to time translation + spatial translation).
 
         Returns
         -------
         float
-            Maximum match value in [0, 1].
+            Maximum match value in $[0, 1]$.
         """
         from scipy.optimize import minimize
 
