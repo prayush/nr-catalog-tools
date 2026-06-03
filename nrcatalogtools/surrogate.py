@@ -11,9 +11,10 @@ NRSur7dq4 notes
 * ``f_low`` controls waveform truncation only (start frequency); for NRSur7dq4
   the recommended value is 0 (return the entire waveform).
 * ``f_ref`` sets the reference epoch at which the spins are defined; it is in
-  **cycles/M** (= M * f_GW where M is in seconds).  For the NR–surrogate
-  comparison the correct choice is ``f_ref = f_lower_NR * M_seconds``, which
-  aligns the surrogate spin epoch with the NR relaxation-time spin values.
+  **cycles/M** (= M * f_GW where M is in seconds).  For aligned-spin or
+  non-spinning systems ``f_ref = f_lower_NR * M_seconds`` is sufficient.  For
+  precessing SXS systems Phase 2 extracts the instantaneous spins from
+  ``Horizons.h5`` at the epoch corresponding to the chosen ``f_ref``.
 * ``dt`` argument is in dimensionless M units.
 * Output ``h[(ell,em)]`` is a complex numpy array representing the spin-weight
   -2 spherical harmonic mode ``h_lm`` (same convention as SXS/RIT/MAYA NR
@@ -34,9 +35,9 @@ the surrogate's minimum training frequency (~0.0165 M·Ω_orbital):
    The surrogate cannot extrapolate before its minimum frequency, so
    ``f_ref`` is clipped to ``f_min_sur``.  For **aligned-spin or non-spinning
    systems** the spin components are constant (no precession), so the metadata
-   spins remain valid regardless of epoch.  For **precessing systems** one
-   would need to extract the instantaneous spins from the NR dynamics at
-   ``f_min_sur`` — not yet implemented; a warning is emitted in that case.
+   spins remain valid regardless of epoch.  For **precessing SXS systems**
+   Phase 2 automatically re-extracts the spin vectors from ``Horizons.h5`` at
+   the clipped epoch so that the spin-epoch is always physically consistent.
 """
 
 from __future__ import annotations
@@ -78,11 +79,139 @@ SURROGATE_MODES = [(ell, em) for ell, em in NR_MODES if ell <= 4]
 _SURROGATE_F_MIN_CYCLES_PER_M = 0.01717 / np.pi  # slightly above omega_0 ≈ 0.0165
 
 
+def _epoch_align_spins(
+    sim_obj,
+    target_t_before_merger: float | None = None,
+    f_ref_target: float | None = None,
+) -> tuple[list, list, float]:
+    """Extract frame-aligned spin vectors for a precessing SXS simulation.
+
+    Loads the Horizons.h5 data from ``sim_obj``, evaluates the orbital frame
+    (separation direction n̂ and angular-momentum direction L̂) at the
+    requested epoch, and rotates the inertial-frame spin vectors into the
+    coprecessing frame expected by NRSur7dq4.
+
+    Exactly one of the following must be supplied to specify the epoch:
+
+    * ``target_t_before_merger`` — time before the waveform peak (in M).
+      The epoch is ``t_peak − target_t_before_merger``, clamped to the
+      available horizon-data range.
+    * ``f_ref_target`` — target GW frequency in cycles/M.  The function
+      finds the earliest NR time at which the (2,2) mode frequency first
+      reaches or exceeds this value.
+
+    Parameters
+    ----------
+    sim_obj : sxs.Simulation_v3
+        Loaded SXS simulation object (from ``sxs.load``).
+    target_t_before_merger : float, optional
+        Seconds before merger (in M units) to use as the epoch.
+    f_ref_target : float, optional
+        Target GW frequency in cycles/M for the epoch.
+
+    Returns
+    -------
+    tuple[list, list, float]
+        ``(chiA, chiB, f_ref_dimless)`` — spin 3-vectors in the
+        coprecessing frame at the chosen epoch, plus the corresponding
+        GW frequency in cycles/M.
+    """
+    if (target_t_before_merger is None) == (f_ref_target is None):
+        raise ValueError(
+            "Exactly one of target_t_before_merger or f_ref_target must be given."
+        )
+
+    strain = sim_obj.strain
+    h = sim_obj.horizons
+    t_h = h.A.time  # (N,) numpy array, absolute NR coordinate time in M
+
+    # -- Determine reference time in NR coordinates -------------------------
+    if f_ref_target is not None:
+        # Find the first sample where f_GW >= f_ref_target.
+        h22_data = strain.data[:, strain.index(2, 2)]
+        phase22 = np.unwrap(np.angle(h22_data))
+        omega22_ts = np.gradient(phase22, strain.t)
+        f_gw_ts = np.abs(omega22_ts) / (2.0 * np.pi)
+        mask = f_gw_ts >= f_ref_target
+        if not np.any(mask):
+            raise ValueError(
+                f"NR waveform never reaches f_ref={f_ref_target:.5f} cycles/M."
+            )
+        t_target = strain.t[int(np.argmax(mask))]
+    else:
+        t_target = strain.max_norm_time() - target_t_before_merger
+
+    # Clamp to the available horizon time range.
+    t_ref = float(np.clip(t_target, t_h[0], t_h[-1]))
+    idx_h = int(np.argmin(np.abs(t_h - t_ref)))
+    idx_h = int(np.clip(idx_h, 1, len(t_h) - 2))
+
+    # -- Extract spin vectors (plain numpy, shape (3,)) ---------------------
+    chi_A = h.A.chi_inertial.ndarray[idx_h]
+    chi_B = h.B.chi_inertial.ndarray[idx_h]
+
+    # -- Compute orbital frame at this epoch --------------------------------
+    # n̂: unit vector from BH B (lighter) to BH A (heavier)
+    r_A = h.A.coord_center_inertial.ndarray[idx_h]
+    r_B = h.B.coord_center_inertial.ndarray[idx_h]
+    r_sep = r_A - r_B
+    nhat = r_sep / np.linalg.norm(r_sep)
+
+    # L̂: orbital angular-momentum direction from r × ṙ (central difference)
+    r_sep_plus = (
+        h.A.coord_center_inertial.ndarray[idx_h + 1]
+        - h.B.coord_center_inertial.ndarray[idx_h + 1]
+    )
+    r_sep_minus = (
+        h.A.coord_center_inertial.ndarray[idx_h - 1]
+        - h.B.coord_center_inertial.ndarray[idx_h - 1]
+    )
+    dt_h = t_h[idx_h + 1] - t_h[idx_h - 1]
+    v_sep = (r_sep_plus - r_sep_minus) / dt_h
+    L_vec = np.cross(r_sep, v_sep)
+    Lhat = L_vec / np.linalg.norm(L_vec)
+
+    # -- Build rotation matrix: inertial → coprecessing frame ---------------
+    # Coprecessing frame convention for NRSur7dq4:
+    #   x̂_cop = n̂  (separation direction)
+    #   ẑ_cop = L̂  (orbital angular momentum)
+    #   ŷ_cop = L̂ × n̂  (right-handed completion)
+    lambdahat = np.cross(Lhat, nhat)
+    lambdahat /= np.linalg.norm(lambdahat)
+    R = np.array([nhat, lambdahat, Lhat])  # rows = new basis vectors in inertial frame
+
+    chiA_rot = list(R @ chi_A)
+    chiB_rot = list(R @ chi_B)
+
+    # -- GW frequency at the chosen epoch -----------------------------------
+    t_wfm = strain.t
+    idx_wfm = int(np.argmin(np.abs(t_wfm - t_h[idx_h])))
+    idx_wfm = int(np.clip(idx_wfm, 1, len(t_wfm) - 2))
+    h22_data = strain.data[:, strain.index(2, 2)]
+    phase22 = np.unwrap(np.angle(h22_data))
+    dt_wfm = t_wfm[idx_wfm + 1] - t_wfm[idx_wfm - 1]
+    omega22 = (phase22[idx_wfm + 1] - phase22[idx_wfm - 1]) / dt_wfm
+    f_gw = float(np.abs(omega22) / (2.0 * np.pi))
+
+    t_actual = t_h[idx_h]
+    print(
+        f"      [Phase 2] epoch t={t_actual:.1f}M  f_ref={f_gw:.5f} cycles/M\n"
+        f"               chi_A=[{chiA_rot[0]:.4f},{chiA_rot[1]:.4f},{chiA_rot[2]:.4f}]"
+        f"  |χ_A|={np.linalg.norm(chi_A):.4f}\n"
+        f"               chi_B=[{chiB_rot[0]:.4f},{chiB_rot[1]:.4f},{chiB_rot[2]:.4f}]"
+        f"  |χ_B|={np.linalg.norm(chi_B):.4f}"
+    )
+    return chiA_rot, chiB_rot, f_gw, R
+
+
 def generate_surrogate_modes(
     params: dict,
     total_mass: float,
     distance: float = 1.0,
     delta_t_seconds: float = 1.0 / 4096,
+    sim_name: str | None = None,
+    catalog=None,
+    nr_wfm=None,
 ) -> tuple[dict, float]:
     """Call NRSur7dq4 and return physical-unit modes as a pycbc TimeSeries dict.
 
@@ -99,6 +228,12 @@ def generate_surrogate_modes(
         Luminosity distance in Mpc for amplitude scaling (default 1).
     delta_t_seconds : float, optional
         Desired sample spacing in physical seconds (default 1/4096).
+    sim_name : str, optional
+        Simulation name, used for epoch-aligned spin extraction on precessing SXS runs.
+    catalog : CatalogBase, optional
+        Catalog instance; enables Phase 2 epoch alignment when the catalog is SXS.
+    nr_wfm : WaveformModes, optional
+        Unused; kept for API compatibility.
 
     Returns
     -------
@@ -135,6 +270,36 @@ def generate_surrogate_modes(
     chi2_perp = np.sqrt(chiB[0] ** 2 + chiB[1] ** 2)
     is_precessing = (chi1_perp > 1e-4) or (chi2_perp > 1e-4)
 
+    # --- Phase 2: Proper epoch alignment for precessing SXS binaries ---
+    # For aligned-spin/non-spinning systems the spins are constant, so
+    # the metadata values are valid at any epoch.  For precessing systems
+    # we must extract the instantaneous spin vectors from the NR dynamics
+    # at a common epoch and rotate them into the surrogate's coprecessing
+    # reference frame before calling NRSur7dq4.
+    _phase2_sim_obj = None
+    if (
+        is_precessing
+        and catalog is not None
+        and getattr(catalog, "CATALOG_TYPE", None) == "SXS"
+        and sim_name
+    ):
+        try:
+            import sxs as _sxs
+
+            _phase2_sim_obj = _sxs.load(sim_name, auto_supersede=True, download=False)
+            chiA, chiB, f_ref_dimless, _phase2_R = _epoch_align_spins(
+                _phase2_sim_obj, target_t_before_merger=4500.0
+            )
+        except Exception as _exc:
+            import traceback
+
+            traceback.print_exc()
+            print(
+                f"      [Phase 2 Warning] Epoch alignment failed ({_exc}); "
+                "falling back to metadata spins."
+            )
+    # -----------------------------------------------------------------------
+
     try:
         t_sur, h_sur, _ = sur(
             q, chiA, chiB, ellMax=4, dt=dt_dimless, f_low=0, f_ref=f_ref_dimless
@@ -155,7 +320,23 @@ def generate_surrogate_modes(
                 omega_min = 0.0170
             f_ref_clipped = omega_min / np.pi
 
-            if is_precessing:
+            if is_precessing and _phase2_sim_obj is not None:
+                # The epoch implied by f_ref_clipped differs from the one we
+                # used above — re-extract spin vectors at the correct NR epoch.
+                try:
+                    chiA, chiB, f_ref_clipped, _phase2_R = _epoch_align_spins(
+                        _phase2_sim_obj, f_ref_target=f_ref_clipped
+                    )
+                    print(
+                        f"      [Phase 2] f_ref clipped to {f_ref_clipped:.5f} cycles/M; "
+                        "re-extracted epoch-aligned spins."
+                    )
+                except Exception as _exc2:
+                    print(
+                        f"      [Phase 2 Warning] Re-alignment at clipped f_ref failed "
+                        f"({_exc2}); keeping previously aligned spins."
+                    )
+            elif is_precessing:
                 print(
                     f"      WARNING: f_ref={f_ref_dimless:.5f} cycles/M is below "
                     f"surrogate minimum; clipping to {f_ref_clipped:.5f}.  "

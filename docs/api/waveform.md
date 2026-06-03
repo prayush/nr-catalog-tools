@@ -29,6 +29,8 @@ utilities for loading, rotating, and matching NR waveforms.
         - f_lower_at_relaxation
         - trim_to_relaxation_time
         - get_parameters
+        - match_sphere_averaged
+        - match_sphere_averaged_bms_maximized
 
 ---
 
