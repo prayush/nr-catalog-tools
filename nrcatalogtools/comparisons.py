@@ -113,7 +113,18 @@ def compare_sim_vs_surrogate(
             "Proceeding, but surrogate extrapolation may be unreliable."
         )
 
-    # 3. Generate surrogate modes
+    chi1_perp = np.sqrt(params["spin1x"] ** 2 + params["spin1y"] ** 2)
+    chi2_perp = np.sqrt(params["spin2x"] ** 2 + params["spin2y"] ** 2)
+    is_precessing = (chi1_perp > 1e-4) or (chi2_perp > 1e-4)
+    if is_precessing and not rotate:
+        print("      Precessing system: enabling SO(3)-optimized match automatically.")
+        rotate = True
+
+    # 3. Generate surrogate modes.
+    # For precessing SXS binaries the surrogate spins are epoch-aligned to the
+    # NR dynamics at the surrogate's training-window start (Phase 2), regardless
+    # of the rotate flag.  The rotate flag only controls whether an additional
+    # SO(3) frame optimisation is performed after the per-mode matches.
     print(
         f"[3/6] Generating NRSur7dq4 modes (M={total_mass:.1f} M☉, D={DISTANCE:.1f} Mpc)..."
     )

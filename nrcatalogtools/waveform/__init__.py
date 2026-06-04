@@ -1,8 +1,6 @@
 """nrcatalogtools.waveform sub-package.
 
-Re-exports the complete public API that was previously in the monolithic
-``waveform.py`` module so that all existing import paths continue to work
-without modification.
+Exports the complete public API for the waveform module.
 """
 
 from nrcatalogtools.waveform.modes import WaveformModes  # noqa: F401

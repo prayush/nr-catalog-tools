@@ -146,42 +146,55 @@ def _epoch_align_spins(
     idx_h = int(np.argmin(np.abs(t_h - t_ref)))
     idx_h = int(np.clip(idx_h, 1, len(t_h) - 2))
 
-    # -- Extract spin vectors (plain numpy, shape (3,)) ---------------------
-    chi_A = h.A.chi_inertial.ndarray[idx_h]
-    chi_B = h.B.chi_inertial.ndarray[idx_h]
+    # -- Identify heavier / lighter body ------------------------------------
+    # gwsurrogate convention (lalsimulation-compatible):
+    #   χ_x = χ · n̂,        n̂ = lighter→heavier (body2→body1)
+    #   χ_y = χ · (L̂ × n̂)
+    #   χ_z = χ · L̂
+    # The SXS labeling (A, B) does not guarantee A is heavier, so we check.
+    mA = float(h.A.mass[idx_h])
+    mB = float(h.B.mass[idx_h])
+    if mA >= mB:
+        chi_primary = h.A.chi_inertial.ndarray[idx_h]  # heavier
+        chi_secondary = h.B.chi_inertial.ndarray[idx_h]  # lighter
+        r_primary = h.A.coord_center_inertial.ndarray[idx_h]
+        r_secondary = h.B.coord_center_inertial.ndarray[idx_h]
+        r_primary_p = h.A.coord_center_inertial.ndarray[idx_h + 1]
+        r_secondary_p = h.B.coord_center_inertial.ndarray[idx_h + 1]
+        r_primary_m = h.A.coord_center_inertial.ndarray[idx_h - 1]
+        r_secondary_m = h.B.coord_center_inertial.ndarray[idx_h - 1]
+    else:
+        chi_primary = h.B.chi_inertial.ndarray[idx_h]  # heavier
+        chi_secondary = h.A.chi_inertial.ndarray[idx_h]  # lighter
+        r_primary = h.B.coord_center_inertial.ndarray[idx_h]
+        r_secondary = h.A.coord_center_inertial.ndarray[idx_h]
+        r_primary_p = h.B.coord_center_inertial.ndarray[idx_h + 1]
+        r_secondary_p = h.A.coord_center_inertial.ndarray[idx_h + 1]
+        r_primary_m = h.B.coord_center_inertial.ndarray[idx_h - 1]
+        r_secondary_m = h.A.coord_center_inertial.ndarray[idx_h - 1]
 
     # -- Compute orbital frame at this epoch --------------------------------
-    # n̂: unit vector from BH B (lighter) to BH A (heavier)
-    r_A = h.A.coord_center_inertial.ndarray[idx_h]
-    r_B = h.B.coord_center_inertial.ndarray[idx_h]
-    r_sep = r_A - r_B
+    # n̂: unit vector from lighter (body2/secondary) to heavier (body1/primary)
+    r_sep = r_primary - r_secondary
     nhat = r_sep / np.linalg.norm(r_sep)
 
     # L̂: orbital angular-momentum direction from r × ṙ (central difference)
-    r_sep_plus = (
-        h.A.coord_center_inertial.ndarray[idx_h + 1]
-        - h.B.coord_center_inertial.ndarray[idx_h + 1]
-    )
-    r_sep_minus = (
-        h.A.coord_center_inertial.ndarray[idx_h - 1]
-        - h.B.coord_center_inertial.ndarray[idx_h - 1]
-    )
+    r_sep_plus = r_primary_p - r_secondary_p
+    r_sep_minus = r_primary_m - r_secondary_m
     dt_h = t_h[idx_h + 1] - t_h[idx_h - 1]
     v_sep = (r_sep_plus - r_sep_minus) / dt_h
     L_vec = np.cross(r_sep, v_sep)
     Lhat = L_vec / np.linalg.norm(L_vec)
 
     # -- Build rotation matrix: inertial → coprecessing frame ---------------
-    # Coprecessing frame convention for NRSur7dq4:
-    #   x̂_cop = n̂  (separation direction)
-    #   ẑ_cop = L̂  (orbital angular momentum)
-    #   ŷ_cop = L̂ × n̂  (right-handed completion)
+    # Right-handed frame (n̂, L̂×n̂, L̂): x̂=n̂, ŷ=L̂×n̂, ẑ=L̂.
+    # Verified against gwsurrogate DynamicsSurrogate convention.
     lambdahat = np.cross(Lhat, nhat)
     lambdahat /= np.linalg.norm(lambdahat)
     R = np.array([nhat, lambdahat, Lhat])  # rows = new basis vectors in inertial frame
 
-    chiA_rot = list(R @ chi_A)
-    chiB_rot = list(R @ chi_B)
+    chiA_rot = list(R @ chi_primary)  # heavier body — returned as chiA
+    chiB_rot = list(R @ chi_secondary)  # lighter body — returned as chiB
 
     # -- GW frequency at the chosen epoch -----------------------------------
     t_wfm = strain.t
@@ -195,11 +208,12 @@ def _epoch_align_spins(
 
     t_actual = t_h[idx_h]
     print(
-        f"      [Phase 2] epoch t={t_actual:.1f}M  f_ref={f_gw:.5f} cycles/M\n"
-        f"               chi_A=[{chiA_rot[0]:.4f},{chiA_rot[1]:.4f},{chiA_rot[2]:.4f}]"
-        f"  |χ_A|={np.linalg.norm(chi_A):.4f}\n"
-        f"               chi_B=[{chiB_rot[0]:.4f},{chiB_rot[1]:.4f},{chiB_rot[2]:.4f}]"
-        f"  |χ_B|={np.linalg.norm(chi_B):.4f}"
+        f"      [Phase 2] epoch t={t_actual:.1f}M  f_ref={f_gw:.5f} cycles/M"
+        f"  (primary={'A' if mA >= mB else 'B'})\n"
+        f"               chi_primary=[{chiA_rot[0]:.4f},{chiA_rot[1]:.4f},{chiA_rot[2]:.4f}]"
+        f"  |χ|={np.linalg.norm(chi_primary):.4f}\n"
+        f"               chi_secondary=[{chiB_rot[0]:.4f},{chiB_rot[1]:.4f},{chiB_rot[2]:.4f}]"
+        f"  |χ|={np.linalg.norm(chi_secondary):.4f}"
     )
     return chiA_rot, chiB_rot, f_gw, R
 
@@ -266,6 +280,15 @@ def generate_surrogate_modes(
 
     sur = load_nrsur7dq4()
 
+    # Query the surrogate's training window start from its internal metadata so
+    # that epoch-aligned spin extraction targets the correct NR time regardless
+    # of which surrogate model is loaded.  Fall back to a conservative value if
+    # the attribute is absent (e.g. a future surrogate with a different layout).
+    try:
+        _sur_t_start_M = abs(sur._sur_dimless.t_0)
+    except AttributeError:
+        _sur_t_start_M = 4500.0
+
     chi1_perp = np.sqrt(chiA[0] ** 2 + chiA[1] ** 2)
     chi2_perp = np.sqrt(chiB[0] ** 2 + chiB[1] ** 2)
     is_precessing = (chi1_perp > 1e-4) or (chi2_perp > 1e-4)
@@ -288,7 +311,7 @@ def generate_surrogate_modes(
 
             _phase2_sim_obj = _sxs.load(sim_name, auto_supersede=True, download=False)
             chiA, chiB, f_ref_dimless, _phase2_R = _epoch_align_spins(
-                _phase2_sim_obj, target_t_before_merger=4500.0
+                _phase2_sim_obj, target_t_before_merger=_sur_t_start_M
             )
         except Exception as _exc:
             import traceback
