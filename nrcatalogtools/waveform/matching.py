@@ -19,7 +19,7 @@ except ImportError:
     from scipy.signal.windows import tukey as _tukey
 
     def _taper(ts):
-        win = _tukey(len(ts), alpha=0.1).astype(np.float64)
+        win = _tukey(len(ts), alpha=0.2).astype(np.float64)
         data = np.array(ts) * win
         return pycbc_TimeSeries(data, delta_t=ts.delta_t, epoch=ts.start_time)
 
@@ -263,6 +263,12 @@ def compute_phase_diff_per_cycle(h_nr, h_sur) -> tuple:
     if n_cycles_nr < 0.5:
         return float("nan"), float("nan")
 
+    # |ΔΦ_NR − ΔΦ_sur| measures the difference in total accumulated phase
+    # (i.e. cycle-count error) over the common window.  Taking differences
+    # within each waveform removes any constant initial-phase offset, so the
+    # result is independent of coalescence-phase convention.  It is NOT the
+    # same as the phase residual after match()-optimal time alignment; it uses
+    # the absolute time alignment (both waveforms referenced to t=0 at peak).
     phase_diff_per_cycle = abs(delta_phi_nr - delta_phi_sur) / n_cycles_nr
     return float(phase_diff_per_cycle), float(n_cycles_nr)
 
@@ -277,9 +283,13 @@ def mode_f_lower(f_lower: float, em: int) -> float:
     Parameters
     ----------
     f_lower : float
-        Orbital reference frequency in Hz (= half the (2,2) GW frequency).
+        GW frequency of the (2,2) mode in Hz (= 2 × orbital frequency).
+        This is what ``CatalogBase.get_parameters()`` returns as ``f_lower``.
     em : int
-        Azimuthal mode number m.
+        Azimuthal mode number m.  For m=0 the mode carries no oscillatory
+        GW power at a well-defined frequency; ``f_lower`` is returned as a
+        conservative lower bound but the result should not be interpreted as
+        a physically meaningful frequency cutoff for that mode.
 
     Returns
     -------
