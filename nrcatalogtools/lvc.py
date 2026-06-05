@@ -695,7 +695,7 @@ def transform_spins_nr_to_lal(
     ---------
     nrSpin1, nrSpin2 : list
              A list of the components of the spins of the objects.
-    nhat, ln_hat : list
+    n_hat, ln_hat : list
              A list of the components of the unit vectors of the objects,
              against which the components of the spins are specified.
     Returns
@@ -755,7 +755,7 @@ def get_nr_to_lal_rotation_angles(
                   The inclination angle.
     phi_ref : float
              The orbital phase at reference time.
-    Fref, t_ref : float, optional
+    f_ref, t_ref : float, optional
                  The reference orbital frequency or time
 
     sim_metadata : dict
