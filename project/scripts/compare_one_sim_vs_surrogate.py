@@ -87,7 +87,7 @@ def _build_parser():
     p.add_argument(
         "--rotate",
         action="store_true",
-        help="Also compute SO(3)-rotation-optimized match (slow)",
+        help="Compute SO(3)-rotation-optimized match (slow; auto-enabled for precessing systems)",
     )
     return p
 

@@ -38,7 +38,7 @@ where $h^{\rm sur}$ is the surrogate evaluated at the catalog's own parameters. 
 
 **Summary of Results.** Applying this framework to a batch of 1,648 non-spinning and aligned-spin waveforms across the SXS, RIT, and MAYA catalogs, we find that the dominant $(2,2)$ mode achieves excellent baseline agreement across all three catalogs for quasi-circular systems, confirming that modern, independently developed numerical relativity codes are highly consistent in this regime. By tracking the mode-by-mode degradation as a function of initial eccentricity, we empirically confirm the surrogate's quasi-circular assumptions, demonstrating a deterministic power-law escalation of the mismatch. We show that sub-dominant harmonics (e.g., $(3,3)$ and $(4,4)$) degrade much more aggressively under eccentric modulation than the $(2,2)$ mode. Furthermore, by explicitly partitioning the SXS catalog into the NRSur7dq4 calibration set and an independent test set, we isolate the surrogate's interpolation error from broader generalization limits, confirming near-perfect in-sample agreement while identifying parameter-space boundaries where out-of-sample accuracy drops.
 
-The organization of this paper is as follows. Section~II describes the formalism for source-frame ambiguities and defines the match and phase-difference metrics. Section~III introduces the numerical relativity catalogs, describes the NRSur7dq4 surrogate, and outlines the computational pipeline. Section~IV presents pilot results for four SXS simulations, followed by the large-scale batch comparison of non-spinning and aligned-spin systems. Section~V outlines planned extensions, including full SO(3) frame-rotation optimization and BMS supertranslation corrections.
+The organization of this paper is as follows. Section~II describes the formalism for source-frame ambiguities and defines the match and phase-difference metrics. Section~III introduces the numerical relativity catalogs and describes the NRSur7dq4 surrogate. Section~IV presents results for non-spinning and aligned-spin systems, including both pilot studies and a large-scale batch comparison of 1,648 simulations. Section~V outlines our pipeline and methodology for comparing precessing-spin systems. Section~VI details planned extensions, and Section~VII concludes the paper. The details of the computational pipeline implementation are provided in the Appendix.
 
 ---
 
@@ -52,13 +52,11 @@ $$H(t, \iota, \phi_c) = h_+(t) - i h_\times(t) = \sum_{\ell \geq 2} \sum_{m=-\el
 
 where $\iota$ and $\phi_c$ are the polar angles of the detector in the source frame, and $\boldsymbol{\theta}$ denotes the intrinsic binary parameters (mass ratio $q$ and individual spin vectors $\boldsymbol{\chi}_{1,2}$). Each catalog simulation provides the complex time series $h_{\ell m}(t)$ in its own source frame convention.
 
-To connect this mathematical decomposition with physical numerical relativity (NR) datasets, it is instructive to examine how these multipoles are constructed from raw spacetime metrics. In Cauchy (3+1) spacetimes evolved by codes like SpEC (SXS), LazEv (RIT), and MayaKranc (MAYA), gravitational radiation is extracted at coordinate spheres at finite radii $R_{\rm ext}$ (typically spanning $100M$ to $400M$). Collaborations use either the Regge-Wheeler-Zerilli (RWZ) perturbative formalism or the Newman-Penrose Weyl curvature scalar $\Psi_4$ to reconstruct the gravitational-wave strain at null infinity.
+To connect this mathematical decomposition with physical numerical relativity (NR) datasets, we review the construction of these multipoles from raw spacetime metrics. In Cauchy (3+1) spacetimes evolved by codes like SpEC (SXS), LazEv (RIT), and MayaKranc (MAYA), gravitational radiation is extracted at coordinate spheres at finite radii $R_{\rm ext}$ (typically spanning $100M$ to $400M$). Collaborations use either the Regge-Wheeler-Zerilli (RWZ) perturbative formalism or the Newman-Penrose Weyl curvature scalar $\Psi_4$ to reconstruct the gravitational-wave strain at null infinity.
 
-**The Regge-Wheeler-Zerilli (RWZ) Formalism.** This perturbative approach treats the outer regions of the simulation domain as a spherically symmetric Schwarzschild background of mass $M$. The metric perturbations $h_{\mu\nu} = g_{\mu\nu} - g^{\rm background}_{\mu\nu}$ are projected onto a basis of tensor spherical harmonics. By isolating the polar (even parity) and axial (odd parity) metric perturbations, one solves the Zerilli and Regge-Wheeler radial master equations, respectively. The resulting master variables directly yield the gauge-invariant strain multipoles $h_{\ell m}(t)$ at the extraction boundary. The primary advantage of the RWZ method is its gauge-invariant construction, which mitigates coordinate gauge ambiguities at finite radii.
+The Regge-Wheeler-Zerilli (RWZ) formalism treats the outer regions of the simulation domain as a spherically symmetric Schwarzschild background of mass $M$. The metric perturbations $h_{\mu\nu} = g_{\mu\nu} - g^{\rm background}_{\mu\nu}$ are projected onto a basis of tensor spherical harmonics. By isolating the polar (even parity) and axial (odd parity) metric perturbations, one solves the Zerilli and Regge-Wheeler radial master equations, respectively. The resulting master variables directly yield the gauge-invariant strain multipoles $h_{\ell m}(t)$ at the extraction boundary. The primary advantage of the RWZ method is its gauge-invariant construction, which mitigates coordinate gauge ambiguities at finite radii. Although merging black holes typically possess spin, extraction boundaries are placed in the asymptotic far-field ($R_{\rm ext} \ge 100M$). In this regime, the leading-order spacetime metric is dominated by the total mass $M$, while spin-induced frame-dragging corrections are sub-leading (scaling as $\sim J/R_{\rm ext}^2$). Consequently, collaborations using RWZ extraction approximate the background metric at these large extraction boundaries as Schwarzschild, treating any spin-induced deviations as higher-order perturbations. 
 
-*A Note on Background Geometry (Schwarzschild vs. Kerr):* A beginning graduate student might naturally wonder why the Schwarzschild metric is assumed here rather than the Kerr metric, given that the merging black holes typically possess spin. Mathematically, metric perturbations on a rotating Kerr background do not separate cleanly into simple polar and axial tensor spherical harmonics; instead, one must solve the more complex Teukolsky equation, which is formulated in terms of the Weyl scalar $\Psi_4$ (NP formalism) rather than metric perturbations $h_{\mu\nu}$. In practical NR wave extraction, however, coordinate spheres are placed in the asymptotic far-field ($R_{\rm ext} \ge 100M$). In this regime, the leading-order spacetime metric is dominated by the total mass $M$ of the system (scaling as $\sim M/R_{\rm ext}$), while the spin-induced frame-dragging corrections are sub-leading (scaling as $\sim J/R_{\rm ext}^2$). Consequently, collaborations using RWZ extraction standardly approximate the background metric at these large extraction boundaries as Schwarzschild, treating any spin-induced deviations as higher-order perturbations. For systems where strong-field precession or high spins dominate near the extraction zone, the Teukolsky ($\Psi_4$) formalism is mathematically superior as it naturally accommodates the Kerr background.
-
-**The Newman-Penrose Weyl Scalar $\Psi_4$.** Alternatively, collaborations measure the curvature directly via the Weyl curvature scalar $\Psi_4$, defined by projecting the Weyl tensor $C_{\alpha\beta\gamma\delta}$ onto a null tetrad $\{l^\mu, n^\mu, m^\mu, \bar{m}^\mu\}$:
+Alternatively, collaborations extract radiation via the Newman-Penrose Weyl curvature scalar $\Psi_4$, defined by projecting the Weyl tensor $C_{\alpha\beta\gamma\delta}$ onto a null tetrad $\{l^\mu, n^\mu, m^\mu, \bar{m}^\mu\}$:
 
 $$\Psi_4 = -C_{\alpha\beta\gamma\delta} n^\alpha \bar{m}^\beta n^\gamma \bar{m}^\delta.$$
 
@@ -70,18 +68,13 @@ To construct the strain multipoles $h_{\ell m}(t)$, one must double-integrate $\
 
 $$h_{\ell m}(t) = \lim_{R \to \infty} \int_{-\infty}^t dt' \int_{-\infty}^{t'} dt'' \, R \Psi_{4,\ell m}(t'').$$
 
-In practice, this numerical double integration is exceptionally sensitive to low-frequency noise, non-zero integration constants, and initial "junk radiation" (the spurious transient wave generated by initial data that do not perfectly represent the historical inspiral). Standard integration methods can lead to severe quadratic or linear secular drifts. To combat this, collaborations use techniques like fixed-frequency integration (FFI) [Reisswig and Pollney, Class. Quantum Grav. 28, 195015 (2011)], which filters out unphysical low-frequency modes by executing the integration in the frequency domain with a sharp high-pass cutoff $f_{\rm cutoff}$. To remove coordinate distortions at finite radii, these complex multipoles are subsequently mapped to future null infinity $\mathcal{I}^+$ either via polynomial extrapolation—fitting $h_{\ell m}(t, R_{\rm ext})$ across multiple concentric extraction spheres in powers of $1/R_{\rm ext}$—or via Cauchy-Characteristic Extraction (CCE), which characteristic-evolves the worldtube data along null hypersurfaces to $\mathcal{I}^+$.
+In practice, this numerical double integration is sensitive to low-frequency noise, non-zero integration constants, and initial "junk radiation" generated by imperfect initial data. Standard integration methods can lead to severe quadratic or linear secular drifts. To combat this, collaborations use techniques such as fixed-frequency integration (FFI) [Reisswig and Pollney, Class. Quantum Grav. 28, 195015 (2011)], which filters out unphysical low-frequency modes by executing the integration in the frequency domain with a sharp high-pass cutoff $f_{\rm cutoff}$. To remove coordinate distortions at finite radii, these complex multipoles are subsequently mapped to future null infinity $\mathcal{I}^+$ either via polynomial extrapolation—fitting $h_{\ell m}(t, R_{\rm ext})$ across multiple concentric extraction spheres in powers of $1/R_{\rm ext}$—or via Cauchy-Characteristic Extraction (CCE), which characteristic-evolves the worldtube data along null hypersurfaces to $\mathcal{I}^+$.
 
-*A Note on the Comparison of Formalisms (Why Solve the Radial Equations?):* Looking at these two formalisms, a beginning graduate student might wonder: if computing the Newman-Penrose scalar $\Psi_4$ is algebraically straightforward (requiring only a projection of the Weyl tensor on the grid), why do collaborations utilize the Regge-Wheeler-Zerilli (RWZ) formalism at all, which requires the additional numerical complexity of solving radial 1D wave equations on every coordinate shell? The answer lies in three major technical trade-offs:
-1.  **Gauge-Invariance at Finite Radii:** Crucially, $\Psi_4$ is *not* gauge-invariant at finite radii. To calculate $\Psi_4$, one must construct an orthonormal null tetrad on the extraction sphere. In a dynamical Cauchy evolution, coordinate shift stretching and lapse slicing warp this tetrad, contaminating the extracted $\Psi_4$ with spurious coordinate-gauge dynamics that decay slowly as $1/R_{\rm ext}$. The RWZ master variables, however, are constructed to be strictly gauge-invariant linear perturbations under the Schwarzschild background metric. They successfully filter out all local coordinate slicing and stretching effects, providing a remarkably clean representation of the physical radiation field even when extracted at relatively small coordinate radii.
-2.  **Mitigation of Integration Drift:** Reconstructing the strain $h$ from $\Psi_4$ requires double time integration, which is highly prone to linear and quadratic secular drifts due to numerical truncation noise and unknown integration constants (the values of $h(0)$ and $\dot{h}(0)$). The RWZ variables, by contrast, relate *directly* to the metric perturbation $h_{\mu\nu}$. Once the Master Zerilli ($\Psi_{\rm Z}$) and Regge-Wheeler ($\Psi_{\rm RW}$) variables are computed, the strain is recovered algebraically:
+While computing $\Psi_4$ is algebraically straightforward, the RWZ formalism is often preferred due to its gauge invariance and mitigation of integration drift. Specifically, $\Psi_4$ requires an orthonormal null tetrad on the extraction sphere; coordinate shift stretching and lapse slicing warp this tetrad, contaminating $\Psi_4$ with spurious coordinate-gauge dynamics that decay slowly as $1/R_{\rm ext}$. The RWZ master variables, however, are strictly gauge-invariant linear perturbations under the Schwarzschild background, effectively filtering out local coordinate slicing effects. Furthermore, the RWZ variables relate directly to the metric perturbation $h_{\mu\nu}$, bypassing the error-prone double time integration required for $\Psi_4$. Once the Zerilli ($\Psi_{\rm Z}$) and Regge-Wheeler ($\Psi_{\rm RW}$) variables are computed, the strain is recovered algebraically:
     
-    $$h_{\ell m}(t) \propto \Psi_{\rm Z}(t) + i \Psi_{\rm RW}(t),$$
+$$h_{\ell m}(t) \propto \Psi_{\rm Z}(t) + i \Psi_{\rm RW}(t).$$
     
-    completely bypassing the need for double time integration and eliminating the arbitrary tuning parameters associated with high-pass frequency-domain filtering (like the FFI cutoff $f_{\rm cutoff}$).
-3.  **Computational Cost:** While solving the Zerilli and Regge-Wheeler 1D radial wave equations requires numerical PDE solvers, these equations are one-dimensional and computationally trivial to evolve. Evolving these 1D equations on extraction shells takes a tiny fraction of a CPU-second per run, which is completely negligible compared to the massive computational expense of evolving the full 3D bulk Einstein equations on the main grid. 
-
-Thus, while NP-${\Psi}_4$ is algebraically elegant and naturally generalizes to rotating Kerr boundaries, the RWZ formalism remains highly favored for its gauge invariance and clean, integration-free reconstruction of the strain at finite coordinate boundaries.
+Solving the associated 1D radial wave equations adds negligible computational cost compared to evolving the full 3D bulk Einstein equations. Thus, while $\Psi_4$ naturally generalizes to rotating Kerr boundaries (via the Teukolsky formalism), the RWZ formalism remains highly favored for its robust, integration-free reconstruction of the strain at finite coordinate boundaries.
 
 These diverse numerical pipelines inevitably introduce coordinate and asymptotic gauge ambiguities. First, because there is no coordinate-independent standard to align the orthonormal spatial coordinate triads $\{\mathbf{e}_x, \mathbf{e}_y, \mathbf{e}_z\}$ representing the source frame, different codes employ differing initial gauge alignments. For example, moving-puncture codes align axes at $t=0$ using the puncture separation and momentum vectors, whereas SpEC aligns the $z$-axis with the orbital angular momentum at the post-junk relaxation time. Furthermore, the coordinate shift vector $\beta^i$ evolves dynamically under different gauge conditions (e.g., damped harmonic vs. Gamma-driver puncture shift gauges), causing coordinate frames to rotate relative to one another during the long dynamical inspiral. Second, the retarded Bondi time coordinate $u$, which labels future null cones, is affected by direction-dependent time-slicing (lapse $\alpha$) histories and null cone warping, dragging direction-dependent coordinate clock offsets directly into the extracted asymptotic strain. These physical coordinate offsets and slicing histories naturally manifest as rigid $\mathrm{SO}(3)$ source-frame rotations and infinite-dimensional Bondi-Metzner-Sachs (BMS) supertranslations, preventing any direct comparison without first systematically aligning the coordinate frames.
 
@@ -133,7 +126,7 @@ where $\Delta\Phi = |\phi(t_{\rm end}) - \phi(t_{\rm start})|$ is the total accu
 
 ---
 
-## III. Waveform Catalogs and Computational Pipeline
+## III. Waveform Catalogs and Surrogate Model
 
 ### A. Numerical Relativity Catalogs and Simulation Classification
 
@@ -164,11 +157,13 @@ with thresholds $\varepsilon_\chi = 0.001$ and $\varepsilon_e = 0.005$.
 | (f) precessing quasi-circular | 3043 (1389, 1962) | 437 (25) | 67 (49) |
 | **Total (all categories)** | **4164 (1731, 2549)** | **1879 (259)** | **635 (100)** |
 
-Several catalog-specific features are highly noteworthy and reflect the distinct parameter-space exploration strategies of the respective collaboration groups as summarized in the `nr-catalog-tools/catalog_organization` subdirectories:
+The distribution of simulations reflects the distinct parameter-space exploration strategies of the respective collaborations, as detailed in the catalog metadata (`nr-catalog-tools/catalog_organization`). 
 
-1. **SXS Catalog**: The SXS catalog is heavily dominated by the precessing quasi-circular (f) category (3,043 total simulations, 1,389 of which were used to calibrate `NRSur7dq4` and 1,962 of which are in-prior), representing the massive, systematic parameter-space coverage required for training and validating high-accuracy quasi-circular precessing models such as `NRSur7dq4` and other precessing templates. Non-spinning eccentric (a) and aligned quasi-circular (d) simulations have moderate representation (206 and 687 total simulations respectively; 0 and 464 in-prior, with 282 aligned quasi-circular calibration simulations). However, eccentric precessing (category e, 30 total simulations, 0 in-prior) and aligned eccentric (category c, 21 total simulations, 0 in-prior) configurations are highly underrepresented, representing a relative gap in SpEC's eccentric exploration.
-2. **RIT Catalog**: The RIT catalog exhibits a highly diverse distribution across the subcategories. It has the largest non-spinning eccentric (a) sample (499 total simulations, 0 in-prior) and aligned-spin eccentric (c) sample (231 total simulations, 0 in-prior). Combined with a large aligned quasi-circular (d) population of 541 total simulations (199 in-prior) and a precessing quasi-circular (f) population of 437 total simulations (25 in-prior), the RIT catalog represents an exceptionally well-rounded catalog for testing eccentric, non-spinning, and aligned-spin waveforms, providing excellent physical parameter coverage.
-3. **MAYA Catalog**: The MAYA catalog is highly specialized, dominated heavily by precessing-eccentric configurations (category e, 303 total simulations, 0 in-prior). This represents a deliberate, large-scale systematic search of the eccentric precessing parameter space using the Einstein Toolkit and MayaKranc code. In contrast, quasi-circular aligned-spin (d, 40 total simulations, 26 in-prior) and non-spinning quasi-circular (b, 34 total simulations, 25 in-prior) systems are much less represented, demonstrating MAYA's complementary scientific focus on eccentric precessing dynamics.
+The SXS catalog is primarily composed of precessing quasi-circular configurations (category f; 3,043 total, 1,962 in-prior), providing the dense parameter-space coverage required for training and validating quasi-circular precessing models such as `NRSur7dq4` (which utilizes 1,389 of these simulations for calibration). Non-spinning eccentric (a) and aligned quasi-circular (d) configurations have moderate representation (206 and 687 total, respectively). Conversely, eccentric precessing (category e; 30 total) and aligned eccentric (category c; 21 total) configurations are less represented in the current SXS dataset.
+
+The RIT catalog exhibits a more uniform distribution across the defined subcategories. It provides the largest sample of both non-spinning eccentric (category a; 499 total) and aligned-spin eccentric (category c; 231 total) configurations. Alongside its aligned quasi-circular (category d; 541 total) and precessing quasi-circular (category f; 437 total) populations, the RIT catalog serves as a comprehensive dataset for evaluating eccentric, non-spinning, and aligned-spin waveforms.
+
+The MAYA catalog is strongly specialized toward precessing-eccentric configurations (category e; 303 total), reflecting a focused investigation of this specific parameter regime using the MayaKranc code. Quasi-circular aligned-spin (category d; 40 total) and non-spinning quasi-circular (category b; 34 total) systems are correspondingly less represented in this dataset.
 
 **NRSur7dq4 calibration sub-classification.** A key feature of the SXS catalog is that 1,731 of its simulations were used as training data for the NRSur7dq4 surrogate~\cite{nrsur7dq4}: 60 in category (b), 282 in category (d), and 1,389 in category (f).  All calibration simulations are quasi-circular ($e = 0$) by the surrogate's training design.  Categories (a), (c), and (e) contain no calibration simulations.  This stratification is recorded in the `catalog_organization/sxs_classification.json` file as a per-simulation boolean flag, propagated into the results CSV, and used to split the SXS analysis into calibration (in-sample) and non-calibration (out-of-sample) subsets.
 
@@ -209,102 +204,12 @@ where $M_{\rm tot}$ is the total mass in kg, $M_s = G M_{\rm tot} / c^3$ is the 
 
 The per-mode match uses the real part $\mathrm{Re}[h_{\ell m}]$, padded to the next power-of-two length and noise-weighted with a freshly constructed PSD at the matching frequency resolution.
 
-### E. Computational Implementation
-
-The Step 1 pipeline is implemented as four cooperating Python modules residing in `project/scripts/`: a main driver (`compare_one_sim_vs_surrogate.py`), a surrogate interface (`surrogate_utils.py`), a match-computation library (`match_utils.py`), and a catalog-loading abstraction (`catalog_utils.py`). A fifth script (`mass_scan.py`) extends the single-mass comparison to a grid of total masses. All modules are self-contained and depend only on `nrcatalogtools`, `pycbc`, `gwsurrogate`, and standard scientific Python libraries. We describe each module in detail below.
-
-#### E.1 Main driver: `compare_one_sim_vs_surrogate.py`
-
-The driver accepts a catalog name, simulation identifier, total mass, PSD name, sample spacing, and output directory via a command-line interface and executes the following six-step workflow.
-
-**Step 1 — Catalog and waveform loading.** The catalog is instantiated through the `catalog_utils.load_catalog()` factory, which dispatches to `nrcatalogtools.SXSCatalog.load()`, `RITCatalog.load()`, or `MayaCatalog.load()` depending on the requested tag. The NR waveform object (`WaveformModes`) is retrieved via `cat.get(sim_name)`. At this stage the waveform data are dimensionless retarded-time multipoles $r\,h_{\ell m}/M$ as stored in the original catalog files.
-
-**Step 2 — Parameter extraction.** Intrinsic parameters are obtained from `cat.get_parameters(sim_name, total_mass=M)`, which queries the catalog metadata and returns a PyCBC-compatible dictionary containing `mass1`, `mass2`, `spin1x/y/z`, `spin2x/y/z`, and `f_lower`. The mass ratio $q = m_1/m_2 \geq 1$ and individual spin magnitudes $|\boldsymbol{\chi}_{1,2}|$ are checked against the NRSur7dq4 prior bounds ($q \leq 4$, $|\boldsymbol{\chi}| \leq 0.8$) via `surrogate_utils.check_surrogate_prior()`, which prints a warning but does not abort for out-of-prior cases.
-
-**Step 3 — Surrogate generation.** `surrogate_utils.generate_surrogate_modes()` is called with the extracted parameter dictionary, the total mass, a fiducial luminosity distance of 1 Mpc, and the requested sample spacing $\Delta t = 1/4096$ s. It returns a dictionary of PyCBC `TimeSeries` objects keyed by $(\ell, m)$, plus the effective starting GW frequency $f_{\rm lower}^{\rm sur}$ of the surrogate output (see §E.2). The effective match lower cutoff is set to $f_{\rm lower}^{\rm match} = \max(f_{\rm lower}^{\rm NR},\, f_{\rm lower}^{\rm sur})$, ensuring neither waveform is penalized for frequency content outside the other's support.
-
-**Step 4 — PSD construction.** Rather than building a single global PSD, the pipeline delegates PSD construction to `match_utils.compute_mode_match()`, which builds a fresh `aLIGOZeroDetHighPower` PSD at each mode's frequency resolution after the waveforms have been zero-padded to the appropriate power-of-two length. This guarantees exact consistency between the PSD frequency grid and the waveform frequency grid, which `pycbc.filter.match()` requires.
-
-**Step 5 — Per-mode match computation.** For each mode $(\ell, m)$ in the set $\{(2,2),(2,1),(3,3),(4,4),(5,5),(3,2),(4,3)\}$, the script:
-
-1. Extracts the NR mode via `wfm.get_mode(ell, em, total_mass, distance, delta_t_seconds)`, obtaining a complex physical-unit `TimeSeries` with epoch set so $t = 0$ is at the $(2,2)$ amplitude peak.
-2. Retrieves the corresponding surrogate `TimeSeries` from the `h_sur` dictionary.
-3. Computes the noise-weighted match on the real parts $\mathrm{Re}[h_{\ell m}]$ via `match_utils.compute_mode_match()`, using mode-specific frequency cutoff $f_{\rm lower}^{(\ell m)} = f_{\rm lower}^{\rm match} \cdot |m|/2$.
-4. Computes the accumulated phase difference per GW cycle via `match_utils.compute_phase_diff_per_cycle()`, operating on the complex mode time series over their common time window.
-
-The $(5,5)$ mode is recorded as NaN because NRSur7dq4 does not provide $\ell = 5$ modes. Modes that are near-zero (as for odd-$m$ harmonics at $q=1$, $\chi=0$) are not excluded by the pipeline; the degenerate-mode guard in `compute_mode_match()` returns NaN if the maximum amplitude of either waveform falls below $10^{-50}$, preventing division by zero in the inner-product normalization.
-
-**Step 6 — Output.** Results are written to a per-simulation CSV file and a three-panel figure ($(2,2)$ amplitude comparison, $(2,2)$ real-part detail near merger, and a color-coded bar chart of per-mode matches), together with a formatted console table.
-
-#### E.2 Surrogate interface: `surrogate_utils.py`
-
-This module encapsulates all interaction with the `gwsurrogate` library and implements the correct spin-epoch alignment protocol.
-
-**Surrogate loading.** The NRSur7dq4 model is a large file (~800 MB) that is expensive to load from disk. The module uses a module-level singleton `_nrsur7dq4` so the model is loaded at most once per Python process, regardless of how many simulations are evaluated in a single run.
-
-**Physical unit conversion.** The total mass in solar masses is converted to seconds via $M_s = M_{\rm tot} \cdot G M_\odot/c^3$ (using `nrcatalogtools.utils.time_to_physical()`), which sets the physical time and amplitude scales. The dimensionless surrogate time step is $\Delta t_{\rm dimless} = \Delta t_{\rm phys}/M_s$, and the reference frequency is $f_{\rm ref} = f_{\rm lower}^{\rm NR} \cdot M_s$ cycles$/M$.
-
-**The `f_low`/`f_ref` distinction.** The `gwsurrogate` API for NRSur7dq4 distinguishes two frequency arguments with distinct physical meanings. The `f_low` argument controls waveform *truncation*: the surrogate evaluates the full waveform from its natural minimum frequency regardless, and `f_low` simply discards the low-frequency segment of the output before returning it. The gwsurrogate documentation explicitly recommends `f_low=0` for NRSur7dq4, since the model is already short and no truncation is needed. The `f_ref` argument instead sets the *reference epoch* at which the input spin vectors $\boldsymbol{\chi}_{1,2}$ are defined; it is specified in cycles/$M$ (= $M_s \cdot f_{\rm GW}^{(22)}$ in Hz). The surrogate internally backward-evolves the spin dynamics from the `f_ref` epoch to its natural starting frequency, ensuring that the spins at any output time correctly reflect the physical precession history. Setting `f_low = f_ref` (the old convention) would have the surrogate both truncate the waveform and set the spin epoch at the NR relaxation time, but these are logically independent operations and conflating them produces incorrect spin evolution when `f_ref` is below the surrogate minimum.
-
-The pipeline therefore calls:
-
-```python
-t_sur, h_sur, _ = sur(q, chiA, chiB, ellMax=4, dt=dt_dimless, f_low=0, f_ref=f_ref_dimless)
-```
-
-where `f_ref_dimless = f_lower_hz * m_secs`.
-
-**Epoch clipping for long NR waveforms.** When $f_{\rm lower}^{\rm NR} < f_{\rm min}^{\rm sur}$ (i.e. the NR simulation starts at a lower frequency than the surrogate's minimum training extent), the `f_ref` value falls below the surrogate's domain and `gwsurrogate` raises an exception of the form `"Got omega_ref = X < Y = omega_0, too small"`. The module catches this exception, parses the omega_0 value from the error string via a regular expression, clips `f_ref` to $1.01 \times \omega_0 / \pi$ cycles/$M$ (a 1% safety margin), and re-issues the surrogate call. For the aligned-spin and non-spinning systems in the pilot study, the in-plane spin components $\chi_\perp$ are zero and spin vectors do not precess, so the spin values from the NR metadata remain valid at any epoch and no spin-epoch error is introduced by this clipping. For general precessing systems (detected via $\chi_{1\perp}^2 + \chi_{2\perp}^2 > 10^{-8}$), the module prints an explicit warning that the metadata spins are being used at a clipped epoch and that proper treatment would require extracting instantaneous spins from the NR dynamics at $f_{\rm min}^{\rm sur}$.
-
-**Effective starting frequency.** After the surrogate call, the module computes the actual GW frequency at the first output sample from the phase derivative of the $(2,2)$ mode:
-
-$$f_{\rm lower}^{\rm sur} = \frac{1}{2\pi}\frac{d\phi_{22}}{dt}\bigg|_{t=t_{\rm start}}$$
-
-where $\phi_{22} = \arg[h_{22}]$ is the unwrapped phase. This value is returned alongside the mode dictionary and used by the driver to set $f_{\rm lower}^{\rm match}$.
-
-**Epoch alignment.** The surrogate time array $t_{\rm sur}$ is rescaled to physical seconds and shifted so that $t = 0$ coincides with the peak of the $(2,2)$ amplitude (identified as $\arg\max |h_{22}^{\rm sur}|$), matching the epoch convention of `WaveformModes.get_mode()`.
-
-#### E.3 Match computation library: `match_utils.py`
-
-**`compute_mode_match(h_nr, h_sur, f_lower_mode, psd_name)`** receives the real parts of two complex mode time series, zero-pads both to the next power-of-two length $\geq \max(\mathrm{len}(h_{\rm NR}), \mathrm{len}(h_{\rm sur}))$, builds a `from_string(psd_name, ...)` PSD at the resulting frequency resolution $\Delta f = 1/(N_{\rm FFT} \Delta t)$, and calls `pycbc.filter.match()` which maximizes over time and phase shifts. The function returns NaN if either waveform's maximum amplitude falls below $10^{-50}$ (degenerate mode guard). The low-frequency cutoff passed to `pycbc.filter.match()` is always the mode-scaled value $f_{\rm lower}^{(\ell m)} = f_{\rm lower}^{\rm match} \cdot |m|/2$.
-
-**`compute_phase_diff_per_cycle(h_nr, h_sur)`** operates on the complex mode time series. It identifies the common time window $[t_{\rm start}, t_{\rm end}]$ from the `start_time` and `end_time` attributes of the two PyCBC `TimeSeries` objects, slices both waveforms to this common window, unwraps the complex argument to obtain $\phi_{\rm NR}(t)$ and $\phi_{\rm sur}(t)$, and computes
-
-$$\frac{\Delta\Phi}{\rm cycle} = \frac{|\Delta\Phi_{\rm NR} - \Delta\Phi_{\rm sur}|}{N_{\rm cyc}^{\rm NR}},$$
-
-where $\Delta\Phi = |\phi(t_{\rm end}) - \phi(t_{\rm start})|$ and $N_{\rm cyc}^{\rm NR} = \Delta\Phi_{\rm NR}/(2\pi)$. The function returns NaN if fewer than 0.5 GW cycles are present in the common window. Note that the metric is not maximized over any time or phase shift; any residual time-shift error in the epoch alignment will appear as a non-zero $\Delta\Phi/{\rm cycle}$.
-
-**`mode_f_lower(f_lower, em)`** implements the mode-frequency scaling $f_{\rm GW}^{(\ell m)} = |m| \cdot f_{\rm orbital} = |m| \cdot f_{\rm lower}/2$, where $f_{\rm lower}$ is the $(2,2)$-mode reference frequency in Hz and the factor of 1/2 converts from $(2,2)$ GW frequency to orbital frequency.
-
-#### E.4 Catalog abstraction: `catalog_utils.py`
-
-The `load_catalog(name)` factory provides a single entry point for all three supported catalogs. It calls `nrcatalogtools.SXSCatalog.load(download=False)` for SXS (suppressing automatic metadata downloads during batch runs), and the corresponding `load()` methods for RIT and MAYA. The complementary `filter_by_surrogate_prior(catalog, ...)` function iterates over `catalog.simulations_list`, calls `get_parameters()` for each simulation, and passes the result through `surrogate_utils.check_surrogate_prior()`, returning the subset of simulations with $q \in [1,4]$ and $|\boldsymbol{\chi}_{1,2}| \leq 0.8$. This will be the entry point for the batch processing in Step 3.
-
-#### E.5 Batch processor: `batch_aligned_catalogs.py`
-
-The Step 2 batch processor extends the single-simulation driver to all simulations in categories a–d across all three catalogs.  It provides a multi-phase pipeline:
-
-**Enumeration phase.** The script reads the pre-computed classification JSON files in `catalog_organization/` and extracts all `(catalog, sim_id, category, is_nrsur_calibration)` tuples for the requested categories.  For SXS simulations, the JSON stores a `nrsur7dq4_calibration` boolean flag that records whether the simulation was part of the NRSur7dq4 training set.
-
-**Metadata phase.** Parameters and eccentricity are collected sequentially via `cat.get_parameters()` and `cat.get_metadata()`.  Simulations with NaN mass ratio or spin, or outside the NRSur7dq4 prior bounds ($q > 4$ or $|\chi_{1,2}| > 0.8$), are silently excluded.  Eccentricity strings of the form `"< 0.002"` or `"~0.01"` are cleaned by stripping the leading symbol before conversion.
-
-**Restartable parallel processing.** The merged output CSV is checked for already-processed `(catalog, sim_id)` pairs, and only the remaining simulations are dispatched to a `multiprocessing.Pool`.  The NRSur7dq4 surrogate (~800 MB) is loaded once per worker process via a pool initializer; per-process catalog singletons avoid redundant catalog file reads.  Run-time config (sample spacing, PSD name, distance) is stamped into each job dict before dispatch, satisfying Python's requirement that pool function arguments be picklable.  Each completed row is appended to the merged CSV immediately, so partial runs are recoverable.
-
-**Post-processing.**  After the processing loop, the script writes per-catalog CSV files and calls `plot_batch_results.make_individual_sim_figures()` to generate a per-simulation match figure for every analyzed simulation.
-
-**CSV migration.** When the script is run against a CSV produced by an older version lacking the `nrsur7dq4_calibration` column, a lightweight migration function (`_migrate_add_calibration()`) backfills the column from the classification JSONs without triggering a recomputation.
-
-#### E.6 Mass scan: `mass_scan.py`
-
-The mass scan script extends the single-mass comparison to a grid of total masses $M_{\rm tot} \in \{10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90, 100\}\,M_\odot$ for the four pilot simulations. For each $({\rm sim}, M)$ pair, it calls `compare_one_mass()`, which re-extracts parameters at the new total mass (since `f_lower` in Hz scales as $M^{-1}$), regenerates the surrogate, and computes the per-mode match. The NR waveform object is loaded once per simulation and reused across the mass grid, since `WaveformModes.get_mode()` accepts `total_mass` as a rescaling argument. Results are written to a single CSV file (`mass_scan_results.csv`) and a $2 \times 3$ panel figure showing $\log_{10}(1 - \mathcal{F})$ versus $M_{\rm tot}$ for the six surrogate-supported modes, with shaded bands at mismatch thresholds of 1%, 3%, and 10%.
-
-![Figure: Mass scan mismatch per-mode as a function of total binary mass for the pilot configurations.](figs/mass_scan_mismatch.png)
-
 ---
 
-## IV. Results
+## IV. Results: Non-spinning and Aligned-spin BBH
 
-We present results for four SXS simulations selected to probe two orthogonal axes of parameter space: mass ratio ($q = 1$ vs. $q = 2$) and spin ($\chi = 0$ vs. aligned spin $\chi_{1z} \approx 0.5$). All modes from the set $\{(2,2), (2,1), (3,3), (4,4), (5,5), (3,2), (4,3)\}$ are evaluated against NR; the $(5,5)$ mode is unavailable from NRSur7dq4 ($\ell_{\rm max}=4$) and appears as N/A. Table~I summarizes the simulation parameters.
+### A. Pilot Studies
+We first evaluate NRSur7dq4 against a small set of four SXS pilot simulations selected to probe two orthogonal axes of parameter space: mass ratio ($q = 1$ vs. $q = 2$) and spin ($\chi = 0$ vs. aligned spin $\chi_{1z} \approx 0.5$). These systems are non-precessing, so the orbital angular momentum remains aligned with the z-axis of the source frame. For this initial comparison, we evaluate all modes from the set $\{(2,2), (2,1), (3,3), (4,4), (5,5), (3,2), (4,3)\}$; note that the $(5,5)$ mode is unavailable from NRSur7dq4 ($\ell_{\rm max}=4$) and accordingly appears as N/A. Table I summarizes the simulation parameters.
 
 **Table I. Simulation parameters.**
 
@@ -317,7 +222,6 @@ We present results for four SXS simulations selected to probe two orthogonal axe
 
 For SXS:BBH:0001 and SXS:BBH:0005, the NR simulation starts at $\sim 20$ Hz but NRSur7dq4's minimum training extent at these parameters corresponds to $\sim 26$–$27$ Hz. The match lower cutoff is raised accordingly so that neither waveform is penalized for frequency content outside the other's support.
 
-### A. Match Results
 
 **Table II. Per-mode match $\mathcal{F}$ for all four simulations.**
 
@@ -334,7 +238,6 @@ For SXS:BBH:0001 and SXS:BBH:0005, the NR simulation starts at $\sim 20$ Hz but 
 † Near-zero by $q = 1$, $\chi = 0$ symmetry; match value is numerically meaningless.  
 ‡ Anomalous; discussed in Section IV.C.
 
-### B. Phase Difference per Cycle
 
 **Table III. Phase difference per GW cycle $\Delta\Phi/{\rm cycle}$ [rad] and number of NR cycles $N_{\rm cyc}$.**
 
@@ -348,27 +251,24 @@ For SXS:BBH:0001 and SXS:BBH:0005, the NR simulation starts at $\sim 20$ Hz but 
 | (3,+2) | 0.163 (43 cyc) | 0.004 (44 cyc) | 0.003 (43 cyc) | 0.004 (47 cyc) |
 | (4,+3) | — †            | 0.236 (69 cyc) | 0.001 (65 cyc) | 0.004 (71 cyc) |
 
-### C. Discussion
 
-**The dominant (2,2) mode agrees well across all configurations.** Matches of 0.993–0.995 with phase errors of 0.004–0.051 rad/cycle confirm that NRSur7dq4 faithfully reproduces the SXS (2,2) mode. The slightly lower match at $q = 2$, spin (0.9931) compared to $q = 2$, no-spin (0.9947) is consistent with spin-induced amplitude corrections near merger. The phase error is smaller than 0.006 rad/cycle for all $q=2$ cases, indicating that any residual mismatch is dominated by amplitude profile differences rather than phase drift.
+The dominant $(2,2)$ mode agrees well across all configurations. Matches of 0.993–0.995 and phase errors of 0.004–0.051 rad/cycle confirm that `NRSur7dq4` faithfully reproduces the SXS $(2,2)$ mode. For $q=2$, the slightly lower match in the spinning case (0.9931) compared to the non-spinning case (0.9947) is consistent with spin-induced amplitude corrections near merger. The phase error remains below 0.006 rad/cycle for all $q=2$ cases, indicating that residual mismatch is dominated by amplitude differences rather than phase drift.
 
-**Sub-dominant modes are only meaningful when binary symmetries are broken.** At $q = 1$, $\chi = 0$, all odd-$m$ modes — $(2,1)$, $(3,3)$, $(4,3)$ — vanish identically by the binary's exchange symmetry. The match of these modes for SXS:BBH:0001 (0.28–0.35) is the result of comparing two near-zero time series dominated by numerical noise; it carries no physical information. Once this symmetry is broken — either by mass ratio ($q = 2$) or by spin ($\chi_{1z} = 0.5$) — all modes acquire physical amplitude and the surrogate reproduces them to better than 0.95 in all cases except those flagged below.
+The physical relevance of sub-dominant modes depends on whether the underlying binary symmetries are broken. For an equal-mass, non-spinning binary ($q = 1$, $\chi = 0$), all odd-$m$ modes—specifically $(2,1)$, $(3,3)$, and $(4,3)$—vanish identically by exchange symmetry. The reported matches of these modes for SXS:BBH:0001 (0.28–0.35) merely reflect numerical noise. Once this symmetry is broken by either unequal masses ($q = 2$) or non-zero spin ($\chi_{1z} = 0.5$), these modes acquire physical amplitudes, and the surrogate reproduces them with matches exceeding 0.95 in nearly all cases.
 
-**Spin at $q = 1$ preferentially excites $(2,1)$.** Adding $\chi_{1z} = 0.5$ to an otherwise equal-mass binary activates the $(2,1)$ mode (match 0.997, $\Delta\Phi = 0.049$ rad/cycle), while leaving the $(3,3)$ mode at 0.955. This reflects the physical mechanism: the $(2,1)$ mode is dominantly sourced by the mass-weighted spin-orbit coupling, which is directly excited by $\chi_{1z}$ in the equal-mass case, whereas $(3,3)$ requires mass-ratio asymmetry to be dominantly excited.
+Adding aligned spin ($\chi_{1z} = 0.5$) to an equal-mass binary preferentially excites the $(2,1)$ mode (match 0.997, $\Delta\Phi = 0.049$ rad/cycle) over the $(3,3)$ mode (match 0.955). This reflects the underlying physics: the $(2,1)$ mode is sourced dominantly by the mass-weighted spin-orbit coupling, whereas the $(3,3)$ mode requires mass-ratio asymmetry for strong excitation.
 
-**The (3,2) mode is anomalously poor for $q = 2$, $\chi_{1z} = 0.6$.** SXS:BBH:0162 yields $\mathcal{F}_{(3,2)} = 0.569$ despite other primary modes matching at $\geq 0.98$. Crucially, the phase error for this mode is only $0.004$ rad/cycle — the phases agree well. The mismatch is therefore an _amplitude_ mismatch, not a phase error. The $(3,2)$ mode is well known to suffer near-cancellation between its two dominant contributions (mass-ratio sourced and spin-orbit sourced terms) at certain spin configurations. Small errors in the relative weighting of these contributions in the surrogate can produce large fractional amplitude errors while leaving the phase nearly intact. This is precisely the scenario here: the mode's amplitude is at or near a local minimum in the surrogate's interpolation and is therefore most sensitive to interpolation error. A similar but weaker effect may explain the low matches of $(4,3)$ for SXS:BBH:0162 ($\mathcal{F} = 0.406$) and the $(2,1)$ mismatch ($\mathcal{F} = 0.350$), and the reduced $(3,2)$ match for SXS:BBH:0169 ($\mathcal{F} = 0.958$).
+We observe anomalously low agreement for the $(3,2)$ mode in SXS:BBH:0162 ($q=2, \chi_{1z}=0.6$), yielding $\mathcal{F}_{(3,2)} = 0.569$ despite excellent matches for other primary modes ($\geq 0.98$). Crucially, the phase error for this mode is only 0.004 rad/cycle, indicating that the mismatch is driven by an amplitude discrepancy rather than phase deviation. The $(3,2)$ mode exhibits a near-cancellation between mass-ratio and spin-orbit sourced terms at certain spin configurations. Small errors in the surrogate's relative weighting of these contributions can produce large fractional amplitude errors, especially near a local minimum in the interpolation. Similar effects likely explain the reduced matches of the $(4,3)$ mode ($\mathcal{F} = 0.406$) and $(2,1)$ mode ($\mathcal{F} = 0.350$) for SXS:BBH:0162, as well as the $(3,2)$ mode for SXS:BBH:0169 ($\mathcal{F} = 0.958$).
 
-**The (4,4) mode shows systematic phase accumulation error.** Across all cases with non-zero amplitude, $\Delta\Phi_{(4,4)}/{\rm cycle}$ is the largest of any mode, ranging from 0.24 to 0.98 rad/cycle. The (4,4) mode sweeps through twice as many cycles as the (2,2) mode (since $f_{\rm GW}^{(4,4)} \approx 2 f_{\rm GW}^{(2,2)}$), so a factor of ~2 larger $\Delta\Phi/{\rm cycle}$ would be expected from a constant relative phase error per orbital cycle. The observed factor of $\sim$20–100 suggests that the surrogate's $\ell = 4$ sector has genuinely larger fractional phase-integration error, likely because fewer NR training waveforms constrained this sector than constrained $\ell = 2$.
+The $(4,4)$ mode systematically exhibits the largest phase accumulation error among non-vanishing modes, with $\Delta\Phi_{(4,4)}/{\rm cycle}$ ranging from 0.24 to 0.98 rad/cycle. Given that the $(4,4)$ mode oscillates at roughly twice the frequency of the $(2,2)$ mode, a factor of two increase in $\Delta\Phi/{\rm cycle}$ would be expected for a constant relative phase error. The observed factor of $\sim$20–100 suggests that the surrogate's $\ell = 4$ sector possesses larger fractional phase-integration error, likely because fewer NR training waveforms were available to constrain this sector relative to $\ell = 2$.
 
-**The phase metric and match are complementary.** For SXS:BBH:0001 (q=1, no spin), the $(3,2)$ mode has $\mathcal{F}_{(3,2)} = 0.993$ (excellent match) but $\Delta\Phi_{(3,2)}/{\rm cycle} = 0.163$ rad (meaningfully non-zero phase error). The match is insensitive to this slowly accumulated phase drift because the maximization over time shift partially absorbs it; the $\Delta\Phi/{\rm cycle}$ metric exposes it directly. Conversely, the $(2,2)$ mode of SXS:BBH:0162 has $\Delta\Phi_{(2,2)}/{\rm cycle} = 0.005$ rad (near-perfect phase agreement) but $\mathcal{F}_{(2,2)} = 0.993$ (slightly below unity), indicating that the residual mismatch is dominated by the amplitude envelope near merger. Using both metrics together gives a more complete picture than either alone.
+These results highlight the complementary nature of the phase metric and the noise-weighted match. For example, in SXS:BBH:0001, the $(3,2)$ mode yields an excellent match of 0.993, yet exhibits a significant phase error of $\Delta\Phi_{(3,2)}/{\rm cycle} = 0.163$ rad. The match is insensitive to this slowly accumulating drift because the maximization over time shift partially absorbs it. Conversely, the $(2,2)$ mode of SXS:BBH:0162 has near-perfect phase agreement (0.005 rad/cycle) but a slightly reduced match (0.993), indicating amplitude differences near merger. Employing both metrics provides a robust evaluation of waveform agreement.
 
-### D. Step 2: Batch Comparison of Non-Spinning and Aligned-Spin Systems
+### B. Batch Comparison of Non-Spinning and Aligned-Spin Systems
 
 We extend the pilot analysis to all simulations in categories (a)–(d) across the SXS, RIT, and MAYA catalogs that fall within the NRSur7dq4 prior volume.  After metadata filtering, this yields 774 SXS, 686 RIT, and 188 MAYA simulations, for a total of 1,648 waveform comparisons.  We focus our discussion on the quasi-circular subsets (categories b and d) where the surrogate is expected to perform best, but report all categories.
 
-![Figure 1a: Match per mode vs. source parameters (mass ratio, effective spin, individual spins, initial eccentricity) for all simulations.](figs/fig1a_mismatch_vs_params.png)
-
-![Figure 1b: Match per mode vs. source parameters for the quasi-circular (categories b+d) subset.](figs/fig1b_mismatch_vs_params_qc.png)
+![Figure 1: Match per mode vs. source parameters (mass ratio, effective spin, individual spins, initial eccentricity) for all simulations.](figs/fig1a_mismatch_vs_params.png)
 
 **Table V. Per-mode match statistics (median / 10th percentile) for quasi-circular systems (categories b+d).**
 
@@ -381,52 +281,43 @@ We extend the pilot analysis to all simulations in categories (a)–(d) across t
 | $(3,2)$ | 0.8580 / 0.4615 | 0.9700 / 0.6452 | 0.9794 / 0.7781 |
 | $(4,3)$ | 0.6711 / 0.2989 | 0.8248 / 0.5763 | 0.9765 / 0.4615 |
 
-#### D.1 Dominant (2,2) mode
+#### B.1 Quasi-circular Systems
 
-The SXS (2,2) match distribution is tightly concentrated near unity: median 0.9923, 90th percentile 0.9945, with the 10th percentile at 0.9496.  The tail below 0.95 consists primarily of (i) short NR simulations (few cycles, low SNR) and (ii) high-mass-ratio, high-spin cases near the edge of the NRSur7dq4 prior.  
+The SXS $(2,2)$ match distribution is concentrated near unity, with a median of 0.9923 and a 10th percentile of 0.9496. The tail below 0.95 consists primarily of short NR simulations with few cycles and configurations at high mass ratios and high spins near the boundary of the `NRSur7dq4` prior domain.
 
-The RIT (2,2) distribution is markedly broader: median 0.9231, 10th percentile only 0.494.  The CDF (Figure 3a, 5) reveals a bimodal structure — a high-match peak near $\mathcal{F} \sim 0.99$ and a low-match population extending below 0.5.  Inspection of the parameter dependence (Figure 1a) shows that the low-match RIT simulations are concentrated at high $|$\chi_{\rm eff}|$ and $q \sim 4$, near the boundary of the surrogate's training domain; phase mismatch at the boundary is expected to be larger.
+The RIT $(2,2)$ distribution is broader, with a median of 0.9231 and a 10th percentile of 0.494. The cumulative distribution function (CDF, Figure 3a, 5) reveals a bimodal structure featuring a high-match peak near $\mathcal{F} \sim 0.99$ and a low-match population extending below 0.5. As shown in Figure 1, the low-match RIT simulations are concentrated at high $|\chi_{\rm eff}|$ and $q \sim 4$. Because these fall near the boundary of the surrogate's training domain, increased phase mismatch is expected.
 
 ![Figure 3a: Cumulative distribution functions (CDFs) of per-mode matches across the three catalogs for quasi-circular systems.](figs/fig3a_mismatch_cdf.png)
 
-The MAYA (2,2) distribution is intermediate: median 0.9728, 10th percentile 0.8439, and 90th percentile 0.9794.  The small MAYA sample size (49 quasi-circular simulations) limits statistical precision but suggests systematically lower matches than SXS at comparable parameters.
+The MAYA $(2,2)$ distribution is intermediate, with a median of 0.9728 and a 10th percentile of 0.8439. Although the small sample size limits statistical precision, the data suggests systematically lower matches compared to SXS at similar parameters.
 
-**SXS calibration vs. non-calibration.** The NRSur7dq4 surrogate was trained on 342 of the 579 SXS quasi-circular simulations analyzed here (337 in the CSV; the small discrepancy reflects the prior cut).  We test whether in-sample simulations show systematically higher matches.  The calibration subset has $(2,2)$ median 0.9926 and 10th percentile 0.9899 (nearly uniform distribution above 0.985).  The non-calibration subset has the same median (0.9919) but a much wider lower tail: 10th percentile 0.360.  This is the expected behaviour: NRSur7dq4 by construction interpolates its training set with near-zero error, so all calibration simulations achieve near-perfect match.  The non-calibration sims test the surrogate's generalization ability; most achieve high match, but a minority fall below 0.95, indicating regions of the parameter space where the sparse training grid limits interpolation accuracy.  Figure 5 displays these two populations separately for each mode.
+We also examine the impact of calibration data. `NRSur7dq4` was trained on 342 of the 579 SXS quasi-circular simulations analyzed here. The calibration subset has a median $(2,2)$ match of 0.9926 and a 10th percentile of 0.9899, consistent with the surrogate's design to interpolate its training set with near-zero error. The non-calibration subset has a similar median (0.9919) but a much wider lower tail, with a 10th percentile of 0.360. This indicates that while the surrogate generalizes well overall, there remain regions where the sparse training grid limits interpolation accuracy.
 
 ![Figure 5: CDF of mismatches (1 - F) for the SXS calibration vs. non-calibration quasi-circular subsets.](figs/fig5_sxs_cal_mismatch_cdf.png)
 
+Sub-dominant mode behavior varies substantially across catalogs, as seen in Table V and Figures 1, 3b, and 5. For the SXS catalog, the median matches for $(3,3)$ (0.987) and $(4,4)$ (0.982) are high, whereas the $(4,3)$ median is lower (0.671) and the odd-$m$ modes $(2,1)$ and $(3,2)$ show wide spreads. This wide spread reflects the binary-symmetry mechanism: for equal-mass, non-spinning systems, odd-$m$ modes vanish, rendering their matches numerically ill-defined.
 
-#### D.2 Sub-dominant modes
+The RIT catalog shows higher median matches for $(2,1)$ (0.968) and $(3,2)$ (0.970) than SXS, but lower medians for $(3,3)$ (0.771) and $(4,4)$ (0.783). The $(3,3)$ mode in RIT exhibits an extended low-match tail, indicating systematic phase error distinct from the $(2,2)$ bimodal structure.
 
-Sub-dominant mode behaviour is substantially more variable across catalogs than the dominant $(2,2)$ mode.  Several patterns emerge from Table V and Figures 1a, 3b, and 5:
+The MAYA catalog achieves median matches above 0.970 for all six modes. While the sample size is small, this suggests that MAYA waveforms in this subset are clustered in parameter regions where `NRSur7dq4` interpolates accurately.
 
-**SXS** shows high median matches for $(3,3)$ (0.987) and $(4,4)$ (0.982) but a substantially lower median for $(4,3)$ (0.671) and a wide spread for $(2,1)$ (0.854) and $(3,2)$ (0.858).  The wide spread in odd-$m$ modes reflects the binary-symmetry mechanism discussed in Section IV.C: equal-mass, non-spinning systems contribute near-zero amplitudes in odd-$m$ modes, making their matches numerically ill-defined.
+The phase-difference metric provides additional diagnostic insights (Figures 2a, 2b). For quasi-circular SXS systems, the $(2,2)$ phase difference has a median of 0.01 rad/cycle, which is well below the threshold of 0.1 rad/cycle typically considered acceptable for parameter estimation. The $(4,4)$ mode exhibits the largest phase errors (median $\sim$0.3 rad/cycle), consistent with the results in Section IV.B and the sparser `NRSur7dq4` training in the $\ell = 4$ sector. The RIT and MAYA catalogs show systematically larger phase differences for several modes, suggesting that their match deficits in Table V are partially attributable to cumulative phase error rather than pure amplitude discrepancy.
 
-**RIT** shows a complementary pattern: higher $(2,1)$ (0.968) and $(3,2)$ (0.970) medians than SXS, but substantially lower $(3,3)$ (0.771) and $(4,4)$ (0.783) medians.  The $(3,3)$ mode in RIT shows an extended low-match tail consistent with systematic phase error in this harmonic, distinct from the $(2,2)$ bimodal structure.
+#### B.2 Effect of eccentricity
 
-**MAYA** consistently achieves the highest median sub-dominant-mode matches across all six modes compared here, with all medians above 0.970.  The small MAYA sample size prevents strong statistical conclusions, but the pattern is consistent with MAYA waveforms being produced at parameters where NRSur7dq4 interpolates well.
-
-#### D.3 Effect of eccentricity
-
-We systematically analyze the quantitative dependence of mismatch and phase errors on orbital eccentricity by introducing dedicated figures for the $e > 0$ population across the SXS, RIT, and MAYA catalogs. Figure 1a reveals the broad mode-by-mode landscape, while our new analysis isolating eccentricity highlights striking and unexpectedly complex catalog dependencies.
+We analyze the quantitative dependence of mismatch and phase errors on orbital eccentricity across the catalogs. Figure 1 maps the broad mode-by-mode landscape, and our focused analysis on eccentricity reveals systematic catalog dependencies.
 
 ![Figure: Mode-by-mode mismatch vs. eccentricity](figs/fig_eccentricity_mismatch.png)
 
 ![Figure: Mode-by-mode phase difference per cycle vs. eccentricity](figs/fig_eccentricity_phase.png)
 
-For very low initial eccentricity ($e < 0.005$, the quasi-circular threshold), one anticipates near-perfect agreement with the quasi-circular NRSur7dq4 surrogate. Indeed, the dominant $(2,2)$ mode for SXS waveforms robustly registers mismatches below $10^{-3}$ to $10^{-4}$, confirming the analytical convergence between SpEC simulations and the surrogate interpolant. Crucially, we recover similarly excellent quasi-circular limits for the non-SXS catalogs. The RIT and MAYA catalogs uniformly cluster at very low mismatches ($< 10^{-2}$) for $e < 10^{-3}$, establishing that systematic cross-catalog numerical differences are sub-dominant to surrogate interpolation errors in the quasi-circular regime when waveforms are properly aligned in time.
+For low initial eccentricity ($e < 0.005$), we find near-perfect agreement with the quasi-circular `NRSur7dq4` surrogate. The dominant $(2,2)$ mode for SXS waveforms yields mismatches below $10^{-3}$ to $10^{-4}$. Similar limits are recovered for the RIT and MAYA catalogs ($< 10^{-2}$ for $e < 10^{-3}$), demonstrating that cross-catalog numerical differences are sub-dominant to surrogate interpolation errors in the quasi-circular regime when waveforms are time-aligned.
 
-As the initial eccentricity climbs above the $0.005$ threshold, we observe a deterministic power-law escalation of the mismatch uniformly across all three catalogs and for all harmonic modes. As eccentricity increases from $0.005$ to $0.05$, the $(2,2)$ mode mismatch grows by over two orders of magnitude, forming a sharp "elbow" in the error landscape. This rapid deterioration directly reflects the rigid quasi-circular prior of the NRSur7dq4 surrogate: while it beautifully reproduces the $e \to 0$ physics across multiple independent codes, it fails deterministically when forced to extrapolate to eccentric modulations.
+As initial eccentricity increases above 0.005, mismatch escalates according to a power law across all catalogs and harmonics. From $e=0.005$ to $0.05$, the $(2,2)$ mode mismatch grows by over two orders of magnitude. This degradation reflects the surrogate's limitation: restricted to a quasi-circular prior, it cannot capture eccentric modulations. Higher-order harmonics, such as $(3,3)$ and $(4,4)$, degrade more rapidly than the $(2,2)$ mode because eccentric modulation of the orbital frequency is amplified by a factor of $m$.
 
-Crucially, higher-order sub-dominant harmonics (e.g., $(3,3)$ and $(4,4)$) degrade even more aggressively than the dominant $(2,2)$ mode. Because eccentric modulation directly affects the orbital frequency, higher harmonics amplify this modulation by a factor of $m$, resulting in rapid cycle-by-cycle phase slippage and severe amplitude distortions.
-
-Examining the phase difference per cycle, the data across all catalogs is tightly constrained to $< 0.05$ rad/cycle for $e < 0.005$. However, as $e$ increases, the phase discrepancy scales dramatically, surpassing $1.0$ rad/cycle for $e \ge 0.05$. This escalation is a definitive hallmark of eccentric orbital motion, reflecting unmodeled periastron precession and radial frequency oscillations. The uniform behavior across catalogs validates that modern NR codes consistently capture these eccentric dynamics, and the surrogate model fails gracefully and predictably on such data.
+The phase difference per cycle remains tightly constrained to $< 0.05$ rad/cycle for $e < 0.005$. However, as $e$ increases, the discrepancy scales up to $1.0$ rad/cycle for $e \ge 0.05$. This increase is a direct consequence of unmodeled periastron precession and radial frequency oscillations. The consistency of this behavior across catalogs indicates that modern NR codes robustly capture these eccentric dynamics, whereas the quasi-circular surrogate systematically and predictably deviates from them.
 
 ![Figure 2a: Phase difference per cycle vs. parameters (including log-scale initial eccentricity) for all simulations.](figs/fig2a_phasediff_vs_params.png)
-
-#### D.4 Phase difference per cycle
-
-The phase-difference metric (Figures 2a, 2b) provides complementary diagnostic power.  For quasi-circular SXS systems, the $(2,2)$ phase difference has median 0.01 rad/cycle — well below the GW cycle-budget threshold of 0.1 rad/cycle often cited as the acceptable error for parameter estimation.  The $(4,4)$ mode has the largest phase errors (median $\sim$0.3 rad/cycle), consistent with the pilot result in Section IV.B and the sparser NRSur7dq4 training in the $\ell = 4$ sector.  RIT and MAYA show systematically larger phase differences for several modes, suggesting that some of the match deficit in Table V is attributable to cumulative phase error rather than amplitude discrepancy.
 
 ![Figure 2b: Phase difference per cycle vs. parameters for the quasi-circular subset.](figs/fig2b_phasediff_vs_params_qc.png)
 
@@ -437,39 +328,83 @@ The phase-difference metric (Figures 2a, 2b) provides complementary diagnostic p
 
 ---
 
-## V. Planned Extensions
+## V. Results: Spin-precessing BBH
 
-The results in Sections IV and IV.D constitute Steps 1 and 2 of a five-step comparative analysis program:
+For precessing-spin systems (categories e and f), the intrinsic spin vectors are no longer aligned with the orbital angular momentum. As a result, both the spin directions and the orbital plane precess dynamically throughout the inspiral. This introduces two major challenges for cross-catalog comparison: (1) spin-epoch inconsistency, where different codes define the reference spins at different epochs, and (2) coordinate-frame offsets, resulting in arbitrary rigid rotations between the extracted NR modes and the surrogate's output frame.
 
-**Step 1 — Pilot comparison (complete).** Per-mode noise-weighted match and phase-difference-per-cycle for four SXS pilot simulations, establishing the pipeline and calibrating the metrics (Section~IV.A).
+To address these challenges, we have developed a precessing comparison pipeline that synchronizes the physical states of the NR simulation and the surrogate model at a common epoch, followed by a post-facto optimization over the remaining gauge degrees of freedom.
 
-**Step 2 — Batch comparison of non-spinning and aligned-spin systems (complete).** Full batch comparison of 1,648 simulations from SXS, RIT, and MAYA in categories (a)–(d), demonstrating that the framework scales to catalog-wide analysis (Section~IV.D).
+### A. Precessing Comparison Pipeline
 
-**Step 3 — SO(3) frame rotation optimization.** The current pipeline maximizes the match over time and phase only. Extending the optimization to include a full SO(3) rotation via Wigner $D$-matrix mixing (Section~II.B) will absorb residual frame-convention differences for precessing-spin systems (categories e and f) where the NR simulation and surrogate source frames can differ by an arbitrary rotation. This is implemented via Nelder-Mead minimization over Euler angles. We expect this to improve the match for all asymmetric modes, and the optimal rotation $R^*(\boldsymbol{\theta})$ will encode systematic frame-convention differences between catalogs as a function of binary parameters.
+The precessing comparison workflow begins by loading the NR waveform and extracting the mass ratio $q$ and dimensionless spin vectors $\vec{\chi}_{1,2}$ from the catalog metadata. If the in-plane spin components satisfy $\chi_{1\perp} > 10^{-4}$ or $\chi_{2\perp} > 10^{-4}$, the precessing pipeline and $SO(3)$ rotation optimization are activated.
 
-**Step 4 — BMS supertranslation correction.** For simulations where the SO(3)-optimized match remains below 0.99, BMS supertranslation optimization (Section~II.C) will be applied. This step will distinguish gauge artifacts from genuine NR numerical errors, and provide an upper bound on the BMS contribution to the observed mismatches.
+For precessing binaries, we extract the time-dependent spin vectors and coordinate frame trajectories—specifically the orbital separation $\vec{r}_{\rm sep}$ and angular momentum $\vec{L}$—from the horizon dynamics (e.g., `Horizons.h5` in the SXS catalog). We establish a common epoch near the start of the surrogate's training window, typically $t_{\rm target} = t_{\rm peak} - 4300M$. At this epoch, we rotate the inertial-frame spins into the coprecessing frame:
 
-**Step 5 — Full-catalog cross-catalog science.** The primary scientific deliverable is a comparison of match distributions across all three catalogs as a function of binary parameters, including the precessing-spin populations (categories e and f) that are absent from Steps 1–2. Key quantities include: (a) the distribution of mismatches $1 - \mathcal{F}$ for each catalog as a function of $q$, $\chi_{\rm eff}$, and $\chi_p$; (b) the optimal rotation $R^*$ as a function of catalog and simulation properties; (c) the improvement in match from Step 2 through Step 4, quantifying the relative contributions of frame rotation and BMS corrections; and (d) the mode-by-mode mismatch distribution identifying which higher harmonics are most sensitive to code-dependent numerical errors.
+$$\vec{\chi}_{\rm cop} = R\,\vec{\chi}_{\rm inertial}, \quad \text{where } R = \begin{pmatrix} \hat{n} \\ \hat{\lambda} \\ \hat{L} \end{pmatrix},$$
+
+with $\hat{n} = \vec{r}_{\rm sep}/|\vec{r}_{\rm sep}|$ pointing from the lighter to the heavier black hole, $\hat{L} = (\vec{r}_{\rm sep} \times \dot{\vec{r}}_{\rm sep})/|\vec{r}_{\rm sep} \times \dot{\vec{r}}_{\rm sep}|$, and $\hat{\lambda} = \hat{L} \times \hat{n}$. This transformation aligns the coordinate system at $t_{\rm target}$ with the surrogate's input convention.
+
+The epoch-aligned coprecessing spins are then supplied to `NRSur7dq4`. The reference frequency $f_{\rm ref}$ is set to the dimensionless gravitational-wave frequency of the $(2,2)$ mode at $t_{\rm target}$, computed via the phase derivative:
+
+$$f_{\rm ref} = \frac{|\dot\phi_{22}|}{2\pi}.$$
+
+The surrogate internally backward-evolves the spin dynamics from this reference epoch to the starting frequency. Finally, the generated surrogate modes are scaled to physical units and time-shifted such that $t = 0$ coincides with the peak of the $(2,2)$ amplitude envelope, ensuring consistency with the NR epoch convention.
+
+### B. SO(3) Frame Rotation Optimization
+
+Because individual spherical harmonic modes are frame-dependent, any residual frame misalignment between the NR simulation and the surrogate model will artificially suppress the per-mode matches. We remove this unphysical gauge offset by maximizing the sphere-averaged noise-weighted overlap over a rigid rotation $\hat{R} \in SO(3)$ parameterizing the Euler angles $(\alpha, \beta, \gamma)$:
+
+$$\hat{R} = \arg\max_{R \in \text{SO}(3)} \sum_{(\ell,m) \in \text{modes}} \mathcal{F}\left(h^\text{NR}_{\ell m},\;\sum_{m'} D^{(\ell)}_{m m'}(R)\,h^\text{sur}_{\ell m'}\right)$$
+
+where $D^{(\ell)}_{m m'}(R)$ is the Wigner D-matrix. The optimization is performed via a differential evolution global optimizer. The resulting optimal angles $(\alpha, \beta, \gamma)$ capture the systematic coordinate frame conventions between catalogs. 
+
+### C. Phase Drift Metric
+
+To supplement the noise-weighted match, we compute the accumulated cycle-count error over the common window:
+
+$$\frac{\Delta\Phi}{\rm cycle} = \frac{|\Delta\Phi_{\rm NR} - \Delta\Phi_{\rm sur}|}{N_{\rm cyc}^{\rm NR}}\quad [\mathrm{rad/cycle}]$$
+
+where $\Delta\Phi = |\phi(t_{\rm end}) - \phi(t_{\rm start})|$ is the total unwrapped phase of the complex mode and $N_{\rm cyc}^{\rm NR} = \Delta\Phi_{\rm NR} / (2\pi)$. This metric uses the peak-aligned physical time axis to track the long-term inspiral phase coherence, acting as a direct probe of physical phasing agreement.
 
 ---
 
-## VI. Conclusions
+## VI. Planned Extensions
 
-We have demonstrated a surrogate-mediated framework for per-mode, noise-weighted comparison of NR BBH waveform catalogs. Applied first to four SXS pilot simulations and then in a batch comparison of 1,648 simulations from the SXS, RIT, and MAYA catalogs, the framework reveals:
+The results presented in this work establish the methodology and execute the initial phases of a comprehensive comparative analysis program. We have completed a pilot comparison using four SXS simulations to calibrate the noise-weighted match and phase-difference metrics, followed by a batch comparison of 1,648 non-spinning and aligned-spin simulations across the SXS, RIT, and MAYA catalogs. Furthermore, we have implemented an $SO(3)$ frame rotation optimization utilizing Wigner $D$-matrix mixtures to align residual frame rotations for precessing-spin systems.
 
-1. **The dominant $(2,2)$ mode** is robustly reproduced across all three catalogs for quasi-circular systems, consistently achieving mismatches below 1% and $< 0.1$ rad/cycle phase errors at the low eccentricity limit. This underscores the maturity and cross-consistency of the underlying SpEC, LazEv, and MayaKranc numerical codes in standard binary configurations.
+Future work will apply Bondi-Metzner-Sachs (BMS) supertranslation corrections for simulations where the $SO(3)$-optimized match remains below 0.99. This procedure will distinguish asymptotic gauge artifacts from genuine numerical truncation errors, establishing an upper bound on the BMS contribution to the observed mismatches.
 
-2. **NRSur7dq4 training simulations vs. independent SXS simulations.** The 342 SXS quasi-circular simulations used to train NRSur7dq4 show near-uniform $(2,2)$ match above 0.985 (10th percentile 0.990) — the expected in-sample behavior of a well-trained interpolant.  The 242 non-calibration SXS quasi-circular simulations have the same median but a substantially wider lower tail (10th percentile 0.360), identifying the parameter-space regions where the sparse training grid limits NRSur7dq4 accuracy.
+Ultimately, this framework will be deployed across the complete catalogs, including the highly populated precessing-spin configurations (categories e and f). The resulting distributions of mismatches ($1 - \mathcal{F}$) will be analyzed as a function of mass ratio, effective spin, and precessing spin parameters. Additionally, we will quantify the relative match improvements provided by frame rotation and BMS corrections, and systematically identify which higher harmonics exhibit the greatest sensitivity to code-dependent numerical errors.
 
-3. **Sub-dominant modes** exhibit more inter-catalog variance than the $(2,2)$ mode, though baseline matches still broadly agree near the quasi-circular limit. Residual discrepancies suggest varying levels of systematic error in the treatment and extraction of higher multipoles.
+---
 
-4. **Eccentric systems** show match degradation consistent with the surrogate's quasi-circular training assumption, providing a built-in negative control: at $e \gtrsim 0.05$, $(2,2)$ matches routinely fall below 0.9.
+## VII. Conclusions
 
-5. **Sub-dominant mode behavior depends critically on binary symmetries**: modes that vanish by symmetry at $q=1$, $\chi=0$ become meaningful diagnostics only when those symmetries are broken by mass ratio or spin.
+We have demonstrated a surrogate-mediated framework for the per-mode, noise-weighted comparison of numerical relativity binary black hole waveform catalogs. Applying this framework to a batch comparison of 1,648 simulations from the SXS, RIT, and MAYA catalogs yields several key insights.
 
-6. **The combined match + $\Delta\Phi/{\rm cycle}$ diagnostic** provides strictly more information than either metric alone, and we advocate its adoption as a standard waveform-comparison reporting convention.
+The dominant $(2,2)$ mode is robustly reproduced across all three catalogs for quasi-circular systems, consistently achieving mismatches below 1% and phase errors of $< 0.1$ rad/cycle at the low-eccentricity limit. This agreement underscores the maturity and cross-consistency of the underlying SpEC, LazEv, and MayaKranc numerical codes in standard binary configurations.
 
-The precessing-spin categories (e and f), which account for $\sim$74% of all catalog simulations within the NRSur7dq4 prior volume, require a full SO(3) frame-rotation optimization before meaningful comparison is possible.  This extension, together with BMS supertranslation correction and the full cross-catalog analysis, will be reported in a companion paper.
+Comparing `NRSur7dq4` training simulations to independent SXS simulations reveals expected behavior: the 342 calibration simulations exhibit a near-uniform $(2,2)$ match above 0.985, while the 242 out-of-sample simulations maintain a similar median but possess a substantially wider lower tail. This identifies parameter-space regions where the sparsity of the training grid limits interpolation accuracy.
+
+Sub-dominant modes exhibit greater inter-catalog variance than the $(2,2)$ mode, although baseline matches broadly agree near the quasi-circular limit. The remaining discrepancies indicate varying levels of systematic error in the treatment and extraction of higher multipoles. Furthermore, the physical significance of sub-dominant modes depends critically on binary symmetries: modes that vanish by exchange symmetry at $q=1$ and $\chi=0$ become meaningful diagnostics only when those symmetries are broken.
+
+For eccentric systems, we observe systematic match degradation consistent with the surrogate's quasi-circular training prior. This provides a natural negative control, with $(2,2)$ matches routinely falling below 0.9 for eccentricities $e \gtrsim 0.05$.
+
+Finally, the combined use of the noise-weighted match and the cycle-averaged phase difference $\Delta\Phi/{\rm cycle}$ provides complementary diagnostic information, and we advocate this dual-metric approach as a standard convention for waveform comparison. 
+
+We have also formulated a precessing comparison pipeline utilizing epoch-aligned spin extraction and Wigner $D$-matrix frame-rotation optimization. The large-scale application of this pipeline to over 3,600 precessing catalog simulations, alongside BMS supertranslation corrections, will be detailed in future work.
+
+---
+
+## Appendix: Computational Implementation
+
+The comparison pipeline is implemented through the `nrcatalogtools` Python library and associated analysis scripts. 
+
+The core library defines a unified catalog abstraction, providing a common interface (`load_catalog`) to dynamically access the SXS, RIT, and MAYA datasets. A dedicated surrogate interface module encapsulates interactions with the `gwsurrogate` library. It manages the caching of the `NRSur7dq4` model, converts dimensionless variables to physical units, enforces epoch alignment, and applies appropriate low-frequency clipping.
+
+Waveform agreement is evaluated via a matching module that computes noise-weighted inner products using `pycbc.filter.match` on the real parts of the modes, while separately evaluating the accumulated phase difference per cycle on the complex strain. For precessing configurations, this module also performs the $SO(3)$ Wigner rotation optimization to align coordinate frames. The overall workflow for a single simulation is coordinated by a comparison manager, which loads the numerical waveform, extracts binary parameters, invokes the surrogate generator, and computes the per-mode matches.
+
+Large-scale execution is facilitated by command-line driver scripts. A single-simulation driver (`compare_one_sim_vs_surrogate.py`) executes the comparison for specified parameters and power spectral densities. A batch processor (`batch_aligned_catalogs.py`) utilizes multiprocessing to systematically evaluate thousands of simulations across catalogs, aggregating the results for statistical analysis. Additionally, parameter-space explorations, such as varying the total binary mass to assess detector band dependencies, are automated via specialized scan scripts.
 
 ---
 

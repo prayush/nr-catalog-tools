@@ -433,7 +433,7 @@ and the surrogate frame.
 ### Design
 
 The `WaveformModes.match_sphere_averaged()` method already implements this
-using Nelder-Mead over `(t_c, φ_c, α, β, γ)`.  However, it operates on
+using differential evolution over `(φ_c, α, β, γ)` (with time shift $t_c$ maximized via FFT).  However, it operates on
 two `WaveformModes` objects.
 
 **Plan:**
