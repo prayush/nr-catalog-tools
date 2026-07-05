@@ -33,16 +33,16 @@ pip install nr-catalog-tools
 Or, for the latest development version:
 
 ```bash
-pip install git+https://github.com/gwnrtools/nr-catalog-tools.git
+pip install git+https://github.com/gwnrtools/nrcats.git
 ```
 
 ## Install with conda
 
-The repository ships an [`environment.yml`](https://github.com/gwnrtools/nr-catalog-tools/blob/master/environment.yml)
+The repository ships an [`environment.yml`](https://github.com/gwnrtools/nrcats/blob/master/environment.yml)
 that creates a complete environment (including `lalsuite` from conda-forge):
 
 ```bash
-git clone https://github.com/gwnrtools/nr-catalog-tools.git
+git clone https://github.com/gwnrtools/nrcats.git
 cd nr-catalog-tools
 conda env create -f environment.yml
 conda activate nrcat

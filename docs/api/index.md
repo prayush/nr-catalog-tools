@@ -7,7 +7,7 @@ has_toc: false
 
 # API Reference
 
-Generated from source docstrings by [`bin/generate_api_docs.py`](https://github.com/gwnrtools/nr-catalog-tools/blob/master/bin/generate_api_docs.py),
+Generated from source docstrings by [`bin/generate_api_docs.py`](https://github.com/gwnrtools/nrcats/blob/master/bin/generate_api_docs.py),
 which statically analyses the package with [griffe](https://mkdocstrings.github.io/griffe/)
 (no runtime imports, so heavy dependencies are not needed to build the docs).
 
