@@ -120,8 +120,13 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
+# Jekyll documentation build artifacts
 /site
+docs/_site/
+docs/.jekyll-cache/
+docs/.bundle/
+docs/Gemfile.lock
+docs/vendor/
 
 # mypy
 .mypy_cache/

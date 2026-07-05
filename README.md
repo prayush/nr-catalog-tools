@@ -33,7 +33,7 @@ pip install nrcatalogtools
 ```
 
 Dependencies: `sxs >= 2025.0.0`, `pycbc`, `lal`, `h5py`, `quaternionic`, `spherical`, `scipy`.
-See [docs/index.md](docs/index.md#dependencies) for the full list.
+See [docs/installation.md](docs/installation.md#dependencies) for the full list.
 
 ---
 
@@ -100,32 +100,43 @@ params = ritcat.get_parameters("RIT:BBH:0001-n100-id3", total_mass=60.0)
 
 ## Documentation
 
+Full documentation: **<https://gwnrtools.github.io/nr-catalog-tools/>**
+
 | Document | Description |
 |----------|-------------|
-| [docs/index.md](docs/index.md) | Full documentation hub and dependency list |
+| [docs/index.md](docs/index.md) | Landing page: quick start and documentation map |
+| [docs/installation.md](docs/installation.md) | Installation, dependencies, cache configuration |
+| [docs/tutorials/](docs/tutorials/index.md) | Worked tutorials: loading, cross-catalog mismatch, surrogate comparison |
 | [docs/catalogs.md](docs/catalogs.md) | Per-catalog reference: SXS, RIT, MAYA |
-| [docs/waveform.md](docs/waveform.md) | `WaveformModes` API reference |
+| [docs/waveform.md](docs/waveform.md) | `WaveformModes` conceptual guide |
+| [docs/api/](docs/api/index.md) | API reference generated from source docstrings |
 | [docs/architecture.md](docs/architecture.md) | Architectural overview and design decisions |
 | [docs/package.md](docs/package.md) | Detailed package internals |
 | [docs/goal.md](docs/goal.md) | Scientific motivation and mismatch formalism |
+| [docs/contributing.md](docs/contributing.md) | Development setup, tests, docs builds |
 
 ---
 
 ## Building the docs locally
 
+The site is built with [Jekyll](https://jekyllrb.com/) using the
+[just-the-docs](https://just-the-docs.com/) theme; the API reference is generated
+from docstrings by a [griffe](https://mkdocstrings.github.io/griffe/)-based script.
+
 ```bash
-# Install the package with docs extras
-pip install -e ".[docs]"
+# 1. Regenerate the API reference pages (docs/api/*.md)
+pip install griffe
+python bin/generate_api_docs.py
 
-# Serve with live reload at http://127.0.0.1:8000
-mkdocs serve
-
-# Or produce a static build in site/
-mkdocs build
+# 2. Build and serve the site (needs Ruby >= 3.0)
+cd docs
+bundle install
+bundle exec jekyll serve      # http://127.0.0.1:4000/nr-catalog-tools/
 ```
 
-The docs site is deployed automatically from `master` via GitHub Actions whenever
-files under `docs/`, `mkdocs.yml`, `nrcatalogtools/`, or `pyproject.toml` change.
+The docs site is deployed automatically from `master` via GitHub Actions
+(`.github/workflows/docs.yml`) whenever files under `docs/`, `nrcatalogtools/`,
+`bin/generate_api_docs.py`, `CHANGELOG.md`, or `pyproject.toml` change.
 
 ---
 

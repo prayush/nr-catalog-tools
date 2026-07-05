@@ -1,4 +1,18 @@
+---
+title: Catalog Organization
+nav_order: 5
+---
+
 # Numerical Relativity Catalog Organization
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
+---
 
 This page describes the organization and classification of the SXS, RIT, and MAYA numerical relativity catalogs into six physical categories based on spin and eccentricity thresholds, as well as the mapping of the `NRSur7dq4` calibration set.
 
@@ -21,7 +35,7 @@ Applying a **spin component threshold of 0.001** and an **initial eccentricity t
 *Note: In the SXS catalog, 6 simulations raised metadata errors and were bypassed. In the NRSur7dq4 calibration subset, there are exactly 0 eccentric simulations across categories (a), (c), and (e) because the surrogate model is strictly quasicircular.*
 
 ### Key Observations:
-1. **NRSur7dq4 Calibration Quasicircular Cut**: Categories **(a)**, **(c)**, and **(e)** (the eccentric categories) contain **exactly 0 simulations** in the NRSur7dq4 calibration subset. This is physically correct, as the `NRSur7dq4` surrogate is a quasicircular (non-eccentric) model calibrated only on simulations with negligible eccentricity ($e < 0.005$).
+1. **NRSur7dq4 Calibration Quasicircular Cut**: Categories **(a)**, **(c)**, and **(e)** (the eccentric categories) contain **exactly 0 simulations** in the NRSur7dq4 calibration subset. This is physically correct, as the `NRSur7dq4` surrogate is a quasicircular (non-eccentric) model calibrated only on simulations with negligible eccentricity ($$e < 0.005$$).
 2. **Generic Spin Precession**: Precessing non-eccentric systems (category **f**) dominate the SXS catalog (3,043 total, 1,389 used for NRSur7dq4). This represents the main body of generic, fully-precessing BBH simulations.
 3. **Eccentricity Abundance**: The RIT catalog has a highly significant portion of eccentric simulations (499 non-spinning, 231 aligned-spin, 117 precessing-spin), making it a valuable catalog for eccentric waveform studies.
 

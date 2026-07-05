@@ -1,4 +1,18 @@
+---
+title: Architecture
+nav_order: 7
+---
+
 # `nr-catalog-tools` — Architectural Overview
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
+---
 
 ## What it Does
 
@@ -40,11 +54,11 @@ sxs.WaveformModes (ndarray subclass)
 
 2. **Lazy path resolution for SXS** ([sxs.md](api/sxs.md)). All path columns are stub empty strings at catalog-load time. Resolving real paths for all ~2000 SXS simulations would require ~2000 `sxs.load()` calls. Actual file access is deferred to `get()`.
 
-3. **`_filepath` as per-instance attribute** ([waveform.md](api/waveform.md)). Extracted from `w_attributes` before passing to the `sxs.WaveformModes` parent `__new__`, preventing class-level sharing where loading a second simulation would silently overwrite the first object's path.
+3. **`_filepath` as per-instance attribute** ([waveform_modes.md](api/waveform_modes.md)). Extracted from `w_attributes` before passing to the `sxs.WaveformModes` parent `__new__`, preventing class-level sharing where loading a second simulation would silently overwrite the first object's path.
 
-4. **`sxs` memoryview → numpy wrapping** ([waveform.md](api/waveform.md)). `sxs.WaveformModes.data` may return a memoryview (not a writable numpy array). All arithmetic wraps it with `np.array(..., dtype=complex)`.
+4. **`sxs` memoryview → numpy wrapping** ([waveform_modes.md](api/waveform_modes.md)). `sxs.WaveformModes.data` may return a memoryview (not a writable numpy array). All arithmetic wraps it with `np.array(..., dtype=complex)`.
 
-5. **`delta_t` dual convention** ([waveform.md](api/waveform.md)). Values `> 1/128` are dimensionless M units (NR native); `≤ 1/128` are physical seconds. The returned `TimeSeries.delta_t` is always in seconds.
+5. **`delta_t` dual convention** ([waveform_modes.md](api/waveform_modes.md)). Values `> 1/128` are dimensionless M units (NR native); `≤ 1/128` are physical seconds. The returned `TimeSeries.delta_t` is always in seconds.
 
 ---
 

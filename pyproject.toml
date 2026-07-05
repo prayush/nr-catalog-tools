@@ -30,10 +30,10 @@ dependencies = [
 Homepage = "https://github.com/gwnrtools/nr-catalog-tools"
 
 [project.optional-dependencies]
+# API-reference generation only; the site itself is built with Jekyll
+# (see docs/Gemfile and .github/workflows/docs.yml).
 docs = [
-    "mkdocs-material>=9.0",
-    "mkdocstrings[python]>=0.25",
-    "pymdown-extensions",
+    "griffe>=1.0",
 ]
 
 [tool.setuptools.packages.find]

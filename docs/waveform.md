@@ -1,13 +1,27 @@
+---
+title: WaveformModes Guide
+nav_order: 6
+---
+
 # `WaveformModes` — Conceptual Guide
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
+---
 
 **Class:** `nrcatalogtools.WaveformModes`  
 **Inherits from:** `sxs.WaveformModes` (ndarray subclass)
 
 > **Auto-generated API reference**: For a complete method listing with signatures and
-> docstrings, see [API Reference → waveform](api/waveform.md).
+> docstrings, see [API Reference → waveform](api/waveform_modes.md).
 
 `WaveformModes` is the central data object returned by all catalog `get()` calls. It stores
-complex gravitational-wave strain multipole modes $h_{\ell m}(t)$ in dimensionless NR units
+complex gravitational-wave strain multipole modes $$h_{\ell m}(t)$$ in dimensionless NR units
 and provides methods to convert to physical units, extract individual modes, sum to
 polarizations, apply frame rotations, and compute mismatches.
 
@@ -63,12 +77,12 @@ mode22 = wfm.get_mode(
 # mode22 is a complex pycbc.types.TimeSeries
 ```
 
-The amplitude is scaled by $G M_\text{tot} / (c^2 \cdot d_\text{Mpc} \cdot \text{Mpc})$ and
-the time epoch is set so that $t=0$ coincides with the peak of the $(2,2)$ mode.
+The amplitude is scaled by $$G M_\text{tot} / (c^2 \cdot d_\text{Mpc} \cdot \text{Mpc})$$ and
+the time epoch is set so that $$t=0$$ coincides with the peak of the $$(2,2)$$ mode.
 
 ### Getting polarizations
 
-`get_td_waveform()` sums over all modes with spin-weight $-2$ spherical harmonics:
+`get_td_waveform()` sums over all modes with spin-weight $$-2$$ spherical harmonics:
 
 $$H = h_+ + i h_\times = \sum_{\ell,m} {}^{-2}Y_{\ell m}(\iota, \phi_c) \, h_{\ell m}(t)$$
 
@@ -84,8 +98,8 @@ hp = pols.real()
 hc = -1 * pols.imag()
 ```
 
-> **Polarization convention:** Returns `conjugate(h)` so that `.real()` gives $h_+$ and
-> `.imag()` gives $+h_\times$.  This differs from LAL convention where `imag() = -h_\times`.
+> **Polarization convention:** Returns `conjugate(h)` so that `.real()` gives $$h_+$$ and
+> `.imag()` gives $$+h_\times$$.  This differs from LAL convention where `imag() = -h_\times`.
 > Pass `lal_convention=True` to get LAL-compatible output.
 
 ### Starting-frequency helpers
@@ -117,7 +131,7 @@ Reads the relaxation time from metadata (tries keys `'relaxed-time'`, `'relaxati
 | Parameter | Interpretation |
 |-----------|----------------|
 | `delta_t_seconds` | **Physical seconds** (e.g. `1/4096` for 4096 Hz sampling) |
-| `delta_t_Msun` | **Dimensionless M units** (NR native, e.g. `0.5` means $0.5\,GM/c^3$) |
+| `delta_t_Msun` | **Dimensionless M units** (NR native, e.g. `0.5` means $$0.5\,GM/c^3$$) |
 
 The returned `TimeSeries.delta_t` is **always in physical seconds**.
 
@@ -136,7 +150,7 @@ R = quaternionic.array.from_euler_angles(alpha, beta, gamma)
 wfm_rotated = wfm.rotated(R)
 ```
 
-Applies Wigner D-matrix rotation: $h^{\text{rot}}_{\ell m}(t) = \sum_{m'} h_{\ell m'}(t) \, D^\ell_{m'm}(R)$
+Applies Wigner D-matrix rotation: $$h^{\text{rot}}_{\ell m}(t) = \sum_{m'} h_{\ell m'}(t) \, D^\ell_{m'm}(R)$$
 
 Uses the `spherical` package for Wigner D-matrix computation.
 
@@ -160,13 +174,13 @@ Useful for rotating surrogate model outputs into the NR frame for direct compari
 
 ### `match_sphere_averaged(other, psd, f_lower, delta_t, ...)`
 
-This method calculates the match (noise-weighted overlap) between two waveforms, integrated over the entire sphere of possible observer directions (sky-averaged) and maximized over coordinate time shift $t_c$, coalescence phase $\phi_c$, and active/passive $SO(3)$ rotation $R$.
+This method calculates the match (noise-weighted overlap) between two waveforms, integrated over the entire sphere of possible observer directions (sky-averaged) and maximized over coordinate time shift $$t_c$$, coalescence phase $$\phi_c$$, and active/passive $$SO(3)$$ rotation $$R$$.
 
 #### Spherical Integration & Mode-by-Mode Equivalence
-The overlap between the full multidimensional strain fields $h_1(t, \Omega)$ and $h_2(t, \Omega)$ over the sphere $S^2$ is defined as:
+The overlap between the full multidimensional strain fields $$h_1(t, \Omega)$$ and $$h_2(t, \Omega)$$ over the sphere $$S^2$$ is defined as:
 $$\mathcal{O}_{\text{sphere}}(h_1, h_2) = \frac{\int_{S^2} \langle h_1(t, \Omega) \mid h_2(t, \Omega) \rangle_t \, d\Omega}{\sqrt{\left[ \int_{S^2} \langle h_1(t, \Omega) \mid h_1(t, \Omega) \rangle_t \, d\Omega \right] \left[ \int_{S^2} \langle h_2(t, \Omega) \mid h_2(t, \Omega) \rangle_t \, d\Omega \right]}}$$
 
-By expanding the strain fields in spin-weighted spherical harmonics ${}^{-2}Y_{\ell m}(\theta, \phi)$ and invoking their orthonormality:
+By expanding the strain fields in spin-weighted spherical harmonics $${}^{-2}Y_{\ell m}(\theta, \phi)$$ and invoking their orthonormality:
 $$\int_{S^2} {}^{-2}Y_{\ell m}^*(\Omega) \, {}^{-2}Y_{\ell' m'}(\Omega) \, d\Omega = \delta_{\ell \ell'} \, \delta_{m m'}$$
 all cross-terms between different modes decouple and vanish. The integrated overlap simplifies to the sum of the mode-by-mode overlaps:
 $$\int_{S^2} \langle h_1(t, \Omega) \mid h_2(t, \Omega) \rangle_t \, d\Omega = \sum_{\ell, m} \langle h_{1, \ell m} \mid h_{2, \ell m} \rangle_t$$
@@ -174,7 +188,7 @@ $$\int_{S^2} \langle h_1(t, \Omega) \mid h_2(t, \Omega) \rangle_t \, d\Omega = \
 #### Extrinsic Optimization
 To align the coordinate frames, the second waveform is transformed via:
 $$h_{2, \ell m}^{\text{rot, shifted}}(t) = e^{-i m \phi_c} \sum_{m'=-\ell}^{\ell} h_{2, \ell m'}(t - t_c) \, D^{\ell}_{m' m}(R)$$
-where $D^\ell_{m'm}(R)$ is the Wigner D-matrix. The returned mismatch $\mathcal{M}$ is defined as:
+where $$D^\ell_{m'm}(R)$$ is the Wigner D-matrix. The returned mismatch $$\mathcal{M}$$ is defined as:
 $$\mathcal{M} = 1 - \max_{t_c,\, \phi_c,\, R \in SO(3)} \left[ \frac{\sum_{\ell, m} \langle h_{1, \ell m} \mid h_{2, \ell m}^{\text{rot, shifted}}(t_c, \phi_c, R) \rangle_t}{\sqrt{\left( \sum_{\ell, m} \langle h_{1, \ell m} \mid h_{1, \ell m} \rangle_t \right) \left( \sum_{\ell, m} \langle h_{2, \ell m} \mid h_{2, \ell m} \rangle_t \right)}} \right]$$
 
 ```python
@@ -188,22 +202,21 @@ mismatch = wfm_a.match_sphere_averaged(
 
 ### `match_sphere_averaged_bms_maximized(other, psd, f_lower, j_max, ...)`
 
-This extended method performs the optimization over the infinite-dimensional **BMS supertranslation** group at null infinity $\mathcal{I}^+$ in addition to the standard rigid rotations and shifts. 
+This extended method performs the optimization over the infinite-dimensional **BMS supertranslation** group at null infinity $$\mathcal{I}^+$$ in addition to the standard rigid rotations and shifts. 
 
 Supertranslations correspond to direction-dependent retarded-time shifts:
 $$u' = u - \alpha(\theta, \phi)$$
-where the supertranslation field $\alpha(\theta, \phi)$ is decomposed into scalar spherical harmonics:
+where the supertranslation field $$\alpha(\theta, \phi)$$ is decomposed into scalar spherical harmonics:
 $$\alpha(\theta, \phi) = \sum_{j=0}^{j_{\text{max}}} \sum_{k=-j}^{j} \alpha_{jk} \, Y_{jk}(\theta, \phi)$$
 For small supertranslations, the waveform modes undergo first-order mixing:
 $$h'_{\ell m}(u) = h_{\ell m}(u) - \sum_{j=0}^{j_{\text{max}}} \sum_{k=-j}^{j} \sum_{p, q} \alpha_{jk} \, \mathcal{G}^{\ell m}_{jk,pq} \, \dot{h}_{pq}(u)$$
-where $\mathcal{G}^{\ell m}_{jk,pq}$ are the spin-weighted Gaunt coefficients:
+where $$\mathcal{G}^{\ell m}_{jk,pq}$$ are the spin-weighted Gaunt coefficients:
 $$\mathcal{G}^{\ell m}_{jk,pq} = \int_{S^2} {}^{-2}Y_{\ell m}^*(\Omega) \, Y_{jk}(\Omega) \, {}^{-2}Y_{pq}(\Omega) \, d\Omega$$
 
-This method optimizes $t_c$, $\phi_c$, $R \in SO(3)$, and the supertranslation coefficients $\alpha_{jk}$ (where $j=1$ shifts the coordinate origin to correct for center-of-mass drift, and $j \ge 2$ modes correct for proper supertranslations) using a Nelder-Mead simplex solver to find the global minimum mismatch.
+This method optimizes $$t_c$$, $$\phi_c$$, $$R \in SO(3)$$, and the supertranslation coefficients $$\alpha_{jk}$$ (where $$j=1$$ shifts the coordinate origin to correct for center-of-mass drift, and $$j \ge 2$$ modes correct for proper supertranslations) using a Nelder-Mead simplex solver to find the global minimum mismatch.
 
 > [!NOTE]
-> The `scri` package is required to compute the spin-weighted Gaunt coupling coefficients $\mathcal{G}^{\ell m}_{jk,pq}$.
-
+> The `scri` package is required to compute the spin-weighted Gaunt coupling coefficients $$\mathcal{G}^{\ell m}_{jk,pq}$$.
 ---
 
 ## Unit conventions
@@ -213,8 +226,8 @@ units**:
 
 | Quantity | Dimensionless unit |
 |----------|--------------------|
-| Time | $GM_\text{tot}/c^3$ |
-| Amplitude ($r \, h_{\ell m}$) | $GM_\text{tot}/c^2$ |
+| Time | $$GM_\text{tot}/c^3$$ |
+| Amplitude ($$r \, h_{\ell m}$$) | $$GM_\text{tot}/c^2$$ |
 
 Physical conversion factors (from [`nrcatalogtools.utils`](api/utils.md)):
 

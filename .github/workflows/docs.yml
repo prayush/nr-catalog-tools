@@ -6,14 +6,16 @@ on:
       - master
     paths:
       - "docs/**"
-      - "mkdocs.yml"
+      - "bin/generate_api_docs.py"
       - "nrcatalogtools/**"
+      - "CHANGELOG.md"
       - "pyproject.toml"
   pull_request:
     paths:
       - "docs/**"
-      - "mkdocs.yml"
+      - "bin/generate_api_docs.py"
       - "nrcatalogtools/**"
+      - "CHANGELOG.md"
       - "pyproject.toml"
   workflow_dispatch:
 
@@ -25,19 +27,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # full history needed for git-revision-date plugin
 
+      # ── API reference (griffe static analysis; no runtime deps needed) ────
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install docs dependencies
-        run: pip install -e ".[docs]"
+        run: pip install "griffe>=1.0"
 
-      - name: Build docs (strict — fails on any warning)
-        run: mkdocs build --strict
+      - name: Check committed API docs are fresh
+        if: github.event_name == 'pull_request'
+        run: python bin/generate_api_docs.py --check
+
+      - name: Regenerate API reference
+        run: python bin/generate_api_docs.py
+
+      # ── Jekyll build (just-the-docs theme) ────────────────────────────────
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+          working-directory: docs
+
+      - name: Build site
+        working-directory: docs
+        env:
+          JEKYLL_ENV: production
+        run: bundle exec jekyll build --strict_front_matter
 
       - name: Deploy to GitHub Pages
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        run: mkdocs gh-deploy --force
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/_site
+          force_orphan: true

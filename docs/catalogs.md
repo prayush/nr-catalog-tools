@@ -1,4 +1,18 @@
+---
+title: Catalog Reference
+nav_order: 4
+---
+
 # Catalog Reference
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
+---
 
 This page documents the three supported NR catalog backends and their metadata conventions.
 All three expose an **identical high-level interface** defined in
@@ -67,9 +81,9 @@ RIT metadata is stored with **hyphens** in the raw `.txt` files and the DataFram
 
 | Parameter | Column name |
 |-----------|-------------|
-| Mass ratio $m_1/m_2$ | `relaxed-mass-ratio-1-over-2` |
-| Spin $\chi_1$ x,y,z | `relaxed-chi1x`, `relaxed-chi1y`, `relaxed-chi1z` |
-| Spin $\chi_2$ x,y,z | `relaxed-chi2x`, `relaxed-chi2y`, `relaxed-chi2z` |
+| Mass ratio $$m_1/m_2$$ | `relaxed-mass-ratio-1-over-2` |
+| Spin $$\chi_1$$ x,y,z | `relaxed-chi1x`, `relaxed-chi1y`, `relaxed-chi1z` |
+| Spin $$\chi_2$$ x,y,z | `relaxed-chi2x`, `relaxed-chi2y`, `relaxed-chi2z` |
 | Eccentricity | `eccentricity` |
 | Relaxation time (dimless M) | `relaxed-time` |
 | Initial GW frequency (dimless) | `freq-start-22` |
@@ -129,10 +143,10 @@ sxs.load(sim_name, auto_supersede=True)  →  sim_obj.strain  →  WaveformModes
 | Parameter | Column name |
 |-----------|-------------|
 | Mass ratio | `reference_mass_ratio` |
-| Spin $\chi_1$ vector | `reference_dimensionless_spin1` (3-element list) |
-| Spin $\chi_2$ vector | `reference_dimensionless_spin2` (3-element list) |
-| Spin $\chi_1$ magnitude | `reference_chi1_mag` |
-| Spin $\chi_2$ magnitude | `reference_chi2_mag` |
+| Spin $$\chi_1$$ vector | `reference_dimensionless_spin1` (3-element list) |
+| Spin $$\chi_2$$ vector | `reference_dimensionless_spin2` (3-element list) |
+| Spin $$\chi_1$$ magnitude | `reference_chi1_mag` |
+| Spin $$\chi_2$$ magnitude | `reference_chi2_mag` |
 | Orbital frequency (3-vector) | `reference_orbital_frequency` |
 | Reference time (dimless M) | `reference_time` |
 | Relaxation time (dimless M) | `relaxation_time` |
@@ -173,11 +187,11 @@ wfm = mayacat.get("GT0001", quantity="waveform")
 
 | Parameter | Column name |
 |-----------|-------------|
-| Mass ratio $m_1/m_2$ | `q` |
-| Spin $\chi_1$ x,y,z | `a1x`, `a1y`, `a1z` |
-| Spin $\chi_2$ x,y,z | `a2x`, `a2y`, `a2z` |
+| Mass ratio $$m_1/m_2$$ | `q` |
+| Spin $$\chi_1$$ x,y,z | `a1x`, `a1y`, `a1z` |
+| Spin $$\chi_2$$ x,y,z | `a2x`, `a2y`, `a2z` |
 | Eccentricity | `eccentricity` |
-| Orbital angular frequency $M\Omega$ | `omega_orbital` |
+| Orbital angular frequency $$M\Omega$$ | `omega_orbital` |
 | GT simulation ID | `GTID` |
 
 ### File formats
@@ -223,7 +237,7 @@ All three paths produce the same output dict:
 
 Initial GW frequency conversion:
 - **RIT / MAYA**: `f_lower [Hz] = f_dimless / (total_mass [M_sun] × lal.MTSUN_SI)`
-- **SXS**: magnitude of `reference_orbital_frequency` (3-vector) gives $M\Omega_{orb}$; $f_{GW} = M\Omega_{orb} / \pi / (M_\text{tot} \times \text{MTSUN\_SI})$
+- **SXS**: magnitude of `reference_orbital_frequency` (3-vector) gives $$M\Omega_{orb}$$; $$f_{GW} = M\Omega_{orb} / \pi / (M_\text{tot} \times \text{MTSUN\_SI})$$
 
 ---
 
@@ -231,7 +245,7 @@ Initial GW frequency conversion:
 
 The table below maps every physical quantity to its key name in each catalog's raw metadata,
 the normalized key used internally by `nrcatalogtools`, and the corresponding PyCBC parameter
-name. Units are **dimensionless code units** (total mass $M=1$, $G=c=1$) unless noted.
+name. Units are **dimensionless code units** (total mass $$M=1$$, $$G=c=1$$) unless noted.
 
 ### Identification
 
@@ -249,8 +263,8 @@ name. Units are **dimensionless code units** (total mass $M=1$, $G=c=1$) unless 
 | Primary mass (physical epoch) | `relaxed-mass1` | `reference_mass1` | `m1` | `mass1` (M☉, scaled by `total_mass`) |
 | Secondary mass (physical epoch) | `relaxed-mass2` | `reference_mass2` | `m2` | `mass2` (M☉) |
 | Total mass (physical epoch) | `relaxed-total-mass` | `reference_mass1` + `reference_mass2` | `m1` + `m2` | `mtotal` (M☉) |
-| Mass ratio $m_1/m_2 \ge 1$ | `relaxed-mass-ratio-1-over-2` | `reference_mass_ratio` | `q` | — (derived: `mass1/mass2`) |
-| Symmetric mass ratio $\eta$ | — (derived) | — (derived) | `eta` | `eta` |
+| Mass ratio $$m_1/m_2 \ge 1$$ | `relaxed-mass-ratio-1-over-2` | `reference_mass_ratio` | `q` | — (derived: `mass1/mass2`) |
+| Symmetric mass ratio $$\eta$$ | — (derived) | — (derived) | `eta` | `eta` |
 | Irreducible mass, primary | — | — | `m1_irr` | — |
 | Irreducible mass, secondary | — | — | `m2_irr` | — |
 | Initial bare mass, primary | `initial-mass1` | `initial_mass1` | — | — |
@@ -261,17 +275,17 @@ name. Units are **dimensionless code units** (total mass $M=1$, $G=c=1$) unless 
 
 | Physical quantity | RIT (raw, hyphens) | SXS | MAYA | PyCBC output |
 |---|---|---|---|---|
-| Primary spin x-component $\chi_{1x}$ | `relaxed-chi1x` | `reference_dimensionless_spin1[0]` | `a1x` | `spin1x` |
-| Primary spin y-component $\chi_{1y}$ | `relaxed-chi1y` | `reference_dimensionless_spin1[1]` | `a1y` | `spin1y` |
-| Primary spin z-component $\chi_{1z}$ | `relaxed-chi1z` | `reference_dimensionless_spin1[2]` | `a1z` | `spin1z` |
-| Secondary spin x-component $\chi_{2x}$ | `relaxed-chi2x` | `reference_dimensionless_spin2[0]` | `a2x` | `spin2x` |
-| Secondary spin y-component $\chi_{2y}$ | `relaxed-chi2y` | `reference_dimensionless_spin2[1]` | `a2y` | `spin2y` |
-| Secondary spin z-component $\chi_{2z}$ | `relaxed-chi2z` | `reference_dimensionless_spin2[2]` | `a2z` | `spin2z` |
-| Primary spin magnitude $\|\chi_1\|$ | derived from components | `reference_chi1_mag` | derived | — |
-| Secondary spin magnitude $\|\chi_2\|$ | derived from components | `reference_chi2_mag` | derived | — |
-| Effective spin $\chi_\text{eff}$ | derived | `reference_chi_eff` | derived | — |
-| Primary in-plane spin $\chi_{1\perp}$ | derived | `reference_chi1_perp` | derived | — |
-| Secondary in-plane spin $\chi_{2\perp}$ | derived | `reference_chi2_perp` | derived | — |
+| Primary spin x-component $$\chi_{1x}$$ | `relaxed-chi1x` | `reference_dimensionless_spin1[0]` | `a1x` | `spin1x` |
+| Primary spin y-component $$\chi_{1y}$$ | `relaxed-chi1y` | `reference_dimensionless_spin1[1]` | `a1y` | `spin1y` |
+| Primary spin z-component $$\chi_{1z}$$ | `relaxed-chi1z` | `reference_dimensionless_spin1[2]` | `a1z` | `spin1z` |
+| Secondary spin x-component $$\chi_{2x}$$ | `relaxed-chi2x` | `reference_dimensionless_spin2[0]` | `a2x` | `spin2x` |
+| Secondary spin y-component $$\chi_{2y}$$ | `relaxed-chi2y` | `reference_dimensionless_spin2[1]` | `a2y` | `spin2y` |
+| Secondary spin z-component $$\chi_{2z}$$ | `relaxed-chi2z` | `reference_dimensionless_spin2[2]` | `a2z` | `spin2z` |
+| Primary spin magnitude $$\|\chi_1\|$$ | derived from components | `reference_chi1_mag` | derived | — |
+| Secondary spin magnitude $$\|\chi_2\|$$ | derived from components | `reference_chi2_mag` | derived | — |
+| Effective spin $$\chi_\text{eff}$$ | derived | `reference_chi_eff` | derived | — |
+| Primary in-plane spin $$\chi_{1\perp}$$ | derived | `reference_chi1_perp` | derived | — |
+| Secondary in-plane spin $$\chi_{2\perp}$$ | derived | `reference_chi2_perp` | derived | — |
 | Initial spin x, primary | `initial-bh-chi1x` | `initial_dimensionless_spin1[0]` | — | — |
 | Initial spin y, primary | `initial-bh-chi1y` | `initial_dimensionless_spin1[1]` | — | — |
 | Initial spin z, primary | `initial-bh-chi1z` | `initial_dimensionless_spin1[2]` | — | — |
@@ -286,17 +300,17 @@ name. Units are **dimensionless code units** (total mass $M=1$, $G=c=1$) unless 
 |---|---|---|---|---|
 | Physical epoch time (code units M) | `relaxed-time` | `reference_time` | — | — |
 | Relaxation / junk-transient end time | `relaxed-time` | `relaxation_time` | — | — |
-| Initial orbital frequency $M\Omega_0$ | — | `initial_orbital_frequency` (scalar) | `omega_orbital` | — |
+| Initial orbital frequency $$M\Omega_0$$ | — | `initial_orbital_frequency` (scalar) | `omega_orbital` | — |
 | Reference orbital frequency (3-vector) | — | `reference_orbital_frequency` ([Ωx, Ωy, Ωz]) | — | — |
-| Starting GW (2,2) frequency (code units) | `freq-start-22` | derived: $\|\mathbf{\Omega}\|/\pi$ | derived: `omega_orbital`/π | `f_lower` (Hz, after unit conversion) |
+| Starting GW (2,2) frequency (code units) | `freq-start-22` | derived: $$\|\mathbf{\Omega}\|/\pi$$ | derived: `omega_orbital`/π | `f_lower` (Hz, after unit conversion) |
 | Starting GW freq at 1 M☉ (Hz) | `freq-start-22-Hz-1Msun` | derived | `f_lower_at_1MSUN` | `f_lower` = value / `total_mass` |
 | Initial separation | `initial-separation` | `initial_separation` | `separation` | — |
 | Reference separation | — | `reference_separation` | — | — |
 | Orbital eccentricity | `eccentricity` | `reference_eccentricity` | `eccentricity` | `eccentricity` |
 | Mean anomaly | — | `reference_mean_anomaly` | `mean_anomaly` | `mean_per_ano` |
 | Eccentricity measurement method | `eccentricity-measurement-method` | — | — | — |
-| Unit orbital angular momentum $\hat{L}$ | `relaxed-LNhatx/y/z` | derived from `reference_orbital_frequency` | — | — |
-| Unit separation vector $\hat{n}$ | `relaxed-nhatx/y/z` | `reference_position1/2` (difference) | — | — |
+| Unit orbital angular momentum $$\hat{L}$$ | `relaxed-LNhatx/y/z` | derived from `reference_orbital_frequency` | — | — |
+| Unit separation vector $$\hat{n}$$ | `relaxed-nhatx/y/z` | `reference_position1/2` (difference) | — | — |
 | Number of GW (2,2) cycles | `number-of-cycles-22` | `number_of_orbits` × 2 | — | — |
 | Number of orbits | `number-of-orbits` | `number_of_orbits` | — | — |
 | Merger / common horizon time | — | `common_horizon_time` | `merge_time` | — |
@@ -359,7 +373,7 @@ catalog classes returns a dict with the starred (★) names populated.
 |---|---|---|---|
 | `mass1` ★ | M☉ | Primary (larger) object mass | Yes |
 | `mass2` ★ | M☉ | Secondary (smaller) object mass | Yes |
-| `spin1x` ★ | — | Primary spin x-component $\chi_{1x} = S_{1x}/m_1^2$ | Yes |
+| `spin1x` ★ | — | Primary spin x-component $$\chi_{1x} = S_{1x}/m_1^2$$ | Yes |
 | `spin1y` ★ | — | Primary spin y-component | Yes |
 | `spin1z` ★ | — | Primary spin z-component | Yes |
 | `spin2x` ★ | — | Secondary spin x-component | Yes |
@@ -371,7 +385,7 @@ catalog classes returns a dict with the starred (★) names populated.
 | `delta_t` | s | Time sample spacing (e.g. `1./4096`) | No |
 | `delta_f` | Hz | Frequency bin spacing | No |
 | `distance` | Mpc | Luminosity distance | No |
-| `inclination` | rad | Angle between $\hat{L}$ and line of sight | No |
+| `inclination` | rad | Angle between $$\hat{L}$$ and line of sight | No |
 | `coa_phase` | rad | Orbital phase at peak amplitude | No |
 | `tc` | GPS s | Coalescence time | No |
 | `ra` | rad | Right ascension | No |

@@ -1,3 +1,9 @@
+---
+title: Cross-catalog comparison
+parent: Tutorials
+nav_order: 2
+---
+
 # Tutorial: Cross-Catalog Comparison
 
 This tutorial shows how to find the "same" physical system in the RIT and SXS catalogs,
@@ -19,17 +25,17 @@ Einstein's equations and different numerical schemes.  Even for nominally identi
 binary parameters, the waveforms differ due to:
 
 - **Initial data mismatch**: eccentricity and spin directions are set differently
-  in each code's initial-data solver, so identical $q$, $\chi_1$, $\chi_2$ in the
+  in each code's initial-data solver, so identical $$q$$, $$\chi_1$$, $$\chi_2$$ in the
   input do not produce identical physical binaries.
-- **Source-frame ambiguity**: each code defines the $z$-axis of its waveform frame
+- **Source-frame ambiguity**: each code defines the $$z$$-axis of its waveform frame
   differently (e.g. initial orbital angular momentum vs. grid axes), introducing an
   overall rotation between the two multipole decompositions.
 - **BMS supertranslation frame**: codes differ in how they extrapolate the waveform
   to null infinity, leaving a direction-dependent time offset across the sphere.
 
 The mismatch computed here accounts for all three by maximizing the noise-weighted
-inner product over time shift $t_c$, coalescence phase $\phi_c$, and source-frame
-rotation $R \in SO(3)$.
+inner product over time shift $$t_c$$, coalescence phase $$\phi_c$$, and source-frame
+rotation $$R \in SO(3)$$.
 
 ---
 
@@ -109,7 +115,7 @@ delta_t = 1./4096  # sampling interval [s]
 ```
 
 The mismatch depends on the total mass because the signal is shifted in frequency.
-At $M = 60\,M_\odot$ the $(2,2)$ mode sweeps from ~20 Hz to ~500 Hz — well within
+At $$M = 60\,M_\odot$$ the $$(2,2)$$ mode sweeps from ~20 Hz to ~500 Hz — well within
 the aLIGO sensitive band.
 
 ---
@@ -143,13 +149,13 @@ print(f"Sky-averaged mismatch (RIT vs SXS): {mismatch:.2e}")
 
 `match_sphere_averaged()` maximizes the noise-weighted overlap over:
 
-- $t_c$ (time shift, found via FFT)
-- $\phi_c$ (coalescence phase, found analytically)
-- $(\alpha, \beta) \in S^2$ (sky orientation = source-frame rotation, found by
+- $$t_c$$ (time shift, found via FFT)
+- $$\phi_c$$ (coalescence phase, found analytically)
+- $$(\alpha, \beta) \in S^2$$ (sky orientation = source-frame rotation, found by
   grid search over polar angles)
 
-The returned value is $\mathcal{M} = 1 - \max \mathcal{O}$, where
-$\mathcal{O} \in [0, 1]$.
+The returned value is $$\mathcal{M} = 1 - \max \mathcal{O}$$, where
+$$\mathcal{O} \in [0, 1]$$.
 
 ---
 
@@ -159,12 +165,12 @@ Typical values for well-matched, high-resolution simulations:
 
 | Mismatch range | Interpretation |
 |----------------|----------------|
-| $< 10^{-3}$ | Excellent agreement — waveforms consistent within numerical truncation error |
-| $10^{-3}$ – $10^{-2}$ | Good — small residual due to eccentricity or spin differences |
-| $> 10^{-2}$ | Significant systematic difference — check parameter matching |
+| $$< 10^{-3}$$ | Excellent agreement — waveforms consistent within numerical truncation error |
+| $$10^{-3}$$ – $$10^{-2}$$ | Good — small residual due to eccentricity or spin differences |
+| $$> 10^{-2}$$ | Significant systematic difference — check parameter matching |
 
-For $q=1$, $\chi=0$ at $M=60\,M_\odot$ you should expect $\mathcal{M} \sim 10^{-3}$
-to $10^{-4}$ between RIT and SXS, consistent with the NR truncation error budget
+For $$q=1$$, $$\chi=0$$ at $$M=60\,M_\odot$$ you should expect $$\mathcal{M} \sim 10^{-3}$$
+to $$10^{-4}$$ between RIT and SXS, consistent with the NR truncation error budget
 reported in the NRAR comparison study.
 
 ---
@@ -201,7 +207,7 @@ plt.show()
 For precessing or high-mass-ratio systems, source-frame differences may include
 BMS supertranslations — direction-dependent retarded-time offsets at null infinity.
 `match_sphere_averaged_bms_maximized()` extends the optimization to include
-supertranslation coefficients $\alpha_{jk}$ up to angular order `j_max`:
+supertranslation coefficients $$\alpha_{jk}$$ up to angular order `j_max`:
 
 ```python
 # Requires the `scri` package: pip install scri

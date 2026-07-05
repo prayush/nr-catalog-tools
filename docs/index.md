@@ -1,111 +1,53 @@
-# `nr-catalog-tools` — Documentation
+---
+title: Home
+nav_order: 1
+permalink: /
+---
 
-## Contents
+# nr-catalog-tools
+{: .fs-9 }
 
-| Document | Description |
-|----------|-------------|
-| [Scientific Goal](goal.md) | Motivation, source-frame ambiguity, BMS supertranslations, mismatch formalism |
-| [Catalog Reference](catalogs.md) | Per-catalog loading, metadata keys, file formats, cache layout |
-| [WaveformModes API](waveform.md) | Full API reference for the central waveform object |
-| [Architecture](architecture.md) | Class hierarchy, data flows, key design decisions |
-| [Package Internals](package.md) | Detailed module descriptions, unit conventions, usage patterns, gotchas |
+A stable, unified Python interface to public numerical-relativity (NR) binary black-hole
+waveform catalogs — for LVK analyses, waveform modeling, and cross-catalog comparison.
+{: .fs-6 .fw-300 }
+
+[Install](installation.md){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[Quick start](#quick-start){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[View on GitHub](https://github.com/gwnrtools/nr-catalog-tools){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ---
 
-## Purpose and Scope
+## What it does
 
-`nr-catalog-tools` provides a **stable, unified Python interface** to three publicly available
-NR BBH waveform catalogs, designed to serve a broad community of gravitational-wave researchers.
+`nr-catalog-tools` serves three overlapping communities with one API:
 
-### LIGO-Virgo-KAGRA data analysis
+- **LIGO-Virgo-KAGRA analyses** — reliable, PyCBC-compatible waveform time series and
+  source-parameter dicts for parameter estimation, injection studies, and template bank
+  construction, with consistent physical units (masses in M☉, distances in Mpc, epoch at
+  the (2,2) peak) across all backends
+- **Waveform modeling** — consistent loading, physical scaling, and frame-alignment tools
+  (Wigner D-matrix rotations, `f_lower` extraction, time/phase alignment) for calibrating
+  and validating EOB, phenomenological, and surrogate models against any NR catalog
+- **Cross-catalog studies** — noise-weighted mismatch computation maximized over time and
+  phase shifts, $$SO(3)$$ rotations, and BMS supertranslations, for quantifying NR waveform
+  accuracy across codes
 
-The package is designed to be a reliable upstream dependency for LVK analysis pipelines.
-It provides:
+All catalog backends expose an **identical interface** (defined by
+[`CatalogBase`](api/catalog.md)), so analysis code written against one catalog works
+against all others without modification.
 
-- PyCBC-compatible waveform time series and source parameter dicts directly from any catalog
-- Consistent physical unit conventions (masses in M☉, distances in Mpc, strain amplitude
-  scaling, time epoch at (2,2) peak) across all three backends
-- A stable API that abstracts away catalog-specific file formats, metadata schemas, and
-  download mechanisms, so injection studies, template bank construction, and parameter
-  estimation workflows are not sensitive to which NR catalog is used
+## Supported catalogs
 
-### Waveform modeling
+| Catalog | Code | Example simulation name |
+|---------|------|------------------------|
+| [SXS](https://data.black-holes.org/waveforms/catalog.html) | SpEC | `SXS:BBH:0001` |
+| [RIT](https://ccrg.rit.edu/content/data/rit-waveform-catalog) | LazEv | `RIT:BBH:0001-n100-id3` |
+| [MAYA / GT](https://einstein.gatech.edu/catalog/) | MayaKranc | `GT0001` |
 
-The package provides the data-loading and preprocessing layer needed when calibrating or
-validating analytical waveform models (EOB, phenomenological, surrogate) against NR:
+New catalogs can be added without touching core code via the
+[plugin registry](api/registry.md).
 
-- Frame alignment tools: SO(3) rotation via Wigner D-matrices, time/phase alignment
-- `get_parameters()` returns PyCBC-compatible intrinsic parameter dicts ready to pass
-  directly to `pycbc.waveform.get_td_waveform_modes()` or surrogate model evaluators
-- `apply_wigner_rotation_to_mode_dict()` rotates surrogate mode dicts into the NR catalog
-  frame for direct mode-by-mode comparison
-
-### Cross-catalog comparison
-
-The package additionally supports rigorous NR accuracy studies:
-
-- Noise-weighted mismatch minimized over $t_c$, $\phi_c$, and $R \in SO(3)$
-- Extended mismatch optimization over BMS supertranslations $\alpha(\theta,\phi)$
-  (direction-dependent retarded-time shifts at null infinity)
-
-See [goal.md](goal.md) for the full scientific derivation.
-
----
-
-## Module Structure
-
-```
-nrcatalogtools/
-├── __init__.py      # Public API: MayaCatalog, RITCatalog, SXSCatalog,
-│                    #   WaveformModes, apply_wigner_rotation_to_mode_dict,
-│                    #   load_catalog, filter_by_surrogate_prior
-├── catalog.py       # Abstract base CatalogABC + shared CatalogBase
-├── rit.py           # RITCatalog + RITCatalogHelper
-├── sxs.py           # SXSCatalog
-├── maya.py          # MayaCatalog
-├── surrogate.py     # NRSur7dq4 loading, evaluation, prior check
-│                    #   load_nrsur7dq4, generate_surrogate_modes,
-│                    #   check_surrogate_prior, SURROGATE_MODES, NR_MODES
-├── comparisons.py   # End-to-end NR vs surrogate comparison pipeline
-│                    #   compare_sim_vs_surrogate, DELTA_T
-├── waveform/        # WaveformModes sub-package
-│   ├── modes.py     #   WaveformModes class
-│   ├── loaders.py   #   load_from_h5, load_from_targz
-│   ├── matching.py  #   apply_wigner_rotation_to_mode_dict,
-│   │                #   load_psd, compute_mode_match,
-│   │                #   compute_phase_diff_per_cycle, mode_f_lower
-│   └── units.py     #   time_to_physical, amp_to_physical (waveform-level)
-├── metadata.py      # get_source_parameters_from_metadata()
-├── lvc.py           # Frame-rotation helpers
-└── utils.py         # Cache paths, download helpers, unit conversions
-```
-
----
-
-## Installation
-
-```bash
-pip install nrcatalogtools
-```
-
-### Dependencies
-
-| Package | Version | Role |
-|---------|---------|------|
-| `sxs` | ≥ 2024.0.0 | SXS simulations access; base class `sxs.WaveformModes` |
-| `pycbc` | any | `TimeSeries`, `match()`, `get_td_waveform_modes()`, `pnutils` |
-| `lal` / `lalsimulation` | any | Physical constants (`MTSUN_SI`, `MSUN_SI`, `G_SI`, `C_SI`, `PC_SI`) |
-| `h5py` | any | HDF5 reading (RIT waveform files) |
-| `quaternionic` | any | Quaternion SO(3) rotation representation |
-| `spherical` | any | Wigner D-matrix computation |
-| `scipy` | any | `InterpolatedUnivariateSpline` for mode resampling |
-| `mayawaves` | any | MAYA coalescence loading (optional; needed for MAYA catalog) |
-| `scri` | any | Spin-weighted Gaunt coefficients (optional; needed for BMS optimization) |
-| `gwsurrogate` | any | Surrogate model evaluation (optional; used in analysis scripts) |
-
----
-
-## Quick Start
+## Quick start
 
 ```python
 import nrcatalogtools as nrcat
@@ -115,43 +57,71 @@ ritcat  = nrcat.RITCatalog.load()
 sxscat  = nrcat.SXSCatalog.load(download=False)
 mayacat = nrcat.MayaCatalog.load()
 
-# …or use the unified helper
+# ...or use the unified helper
 ritcat = nrcat.load_catalog("RIT")
-sxscat = nrcat.load_catalog("SXS")   # sets download=False automatically
+
+# Browse simulations
+print(ritcat.simulations_dataframe.index)
+# Index(['RIT:BBH:0001-n100-id3', 'RIT:BBH:0002-n100-id0', ...], length=1879)
 
 # Load a waveform
 wfm = ritcat.get("RIT:BBH:0003-n100-id0")
+print(wfm.LM)     # available (ell, m) mode pairs
 
-# Physical-unit (2,2) mode
-mode22 = wfm.get_mode(2, 2, total_mass=60.0, distance=100.0, delta_t_seconds=1./4096)
+# Extract the (2,2) mode in physical units
+mode22 = wfm.get_mode(2, 2, total_mass=60.0, distance=100.0,
+                      delta_t_seconds=1./4096)
 
 # Polarizations
-pols = wfm.get_td_waveform(total_mass=40., distance=100., inclination=0.2, coa_phase=0.3)
+pols = wfm.get_td_waveform(total_mass=40., distance=100.,
+                           inclination=0.2, coa_phase=0.3)
 hp, hc = pols.real(), -1 * pols.imag()
 
 # PyCBC-compatible source parameters
 params = ritcat.get_parameters("RIT:BBH:0001-n100-id3", total_mass=60.0)
+# {'mass1': 30.0, 'mass2': 30.0, 'spin1x': 0.0, ..., 'f_lower': 23.4}
 ```
 
----
+For a step-by-step walkthrough, start with the
+[Loading a waveform](tutorials/load-waveform.md) tutorial.
 
-## Cache Layout
+## Documentation map
 
-Controlled by the `NR_CATALOG_CACHE` environment variable (default: `~/.cache/`):
+| Section | What you'll find |
+|---------|------------------|
+| [Installation](installation.md) | pip/conda install, dependencies, cache configuration |
+| [Tutorials](tutorials/index.md) | Worked examples: loading waveforms, cross-catalog mismatches, surrogate comparison |
+| [Catalog Reference](catalogs.md) | Per-catalog loading, metadata keys, file formats, cache layout |
+| [Catalog Organization](catalog_organization.md) | Spin/eccentricity classification of the three catalogs |
+| [WaveformModes Guide](waveform.md) | Conceptual guide to the central waveform object and its unit conventions |
+| [Architecture](architecture.md) | Class hierarchy, data flows, key design decisions |
+| [API Reference](api/index.md) | Per-module reference generated from the source docstrings |
+| [Package Internals](package.md) | Detailed module descriptions, unit conventions, usage patterns, gotchas |
+| [Scientific Goal](goal.md) | Motivation, source-frame ambiguity, BMS supertranslations, mismatch formalism |
+| [Contributing](contributing.md) | Development setup, tests, docs builds, adding a new catalog |
+| [Changelog](changelog.md) | Release history |
+
+## Module structure
 
 ```
-~/.cache/
-├── RIT/
-│   ├── metadata/
-│   │   ├── metadata.csv                           # aggregated DataFrame
-│   │   └── RIT:BBH:0001-n100-id3_Metadata.txt    # per-simulation files
-│   └── data/
-│       ├── ExtrapStrain_RIT-BBH-0001-n100.h5
-│       └── ExtrapPsi4_RIT-BBH-0001-n100-id3.tar.gz
-├── MAYA/
-│   ├── metadata/
-│   └── data/
-│       └── catalog.zip                            # zipped MAYAmetadata.pkl
-└── SXS/
-    └── (managed by the sxs package; typically ~/.cache/sxs/)
+nrcatalogtools/
+├── __init__.py        # Public API: RITCatalog, SXSCatalog, MayaCatalog,
+│                      #   WaveformModes, load_catalog, registry, key maps
+├── catalog.py         # Abstract base CatalogABC + shared CatalogBase
+├── rit.py             # RITCatalog + RITCatalogHelper
+├── sxs.py             # SXSCatalog
+├── maya.py            # MayaCatalog
+├── registry.py        # @register_catalog plugin mechanism
+├── metadata.py        # Cross-catalog key maps + get_source_parameters_from_metadata
+├── classification.py  # Spin/eccentricity classification of catalog simulations
+├── surrogate.py       # NRSur7dq4 loading, evaluation, prior check
+├── comparisons.py     # End-to-end NR vs surrogate comparison pipeline
+├── waveform/          # WaveformModes sub-package
+│   ├── modes.py       #   WaveformModes class
+│   ├── loaders.py     #   load_from_h5, load_from_targz
+│   ├── matching.py    #   mode matching, Wigner rotation, PSD helpers
+│   └── units.py       #   waveform-level constants
+├── lvc.py             # Frame-rotation helpers and LVCNR format utilities
+├── utils.py           # Cache paths, download helpers, unit conversions
+└── schemas/           # YAML key-mapping tables (rit/sxs/maya)
 ```
