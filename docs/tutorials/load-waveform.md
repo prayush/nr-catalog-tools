@@ -21,7 +21,7 @@ pip install nrcats matplotlib
 ## 1. Load the RIT catalog
 
 ```python
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 
 cat = nrcat.RITCatalog.load()
 print(f"Loaded {len(cat.simulations_list)} RIT simulations")

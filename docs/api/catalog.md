@@ -1,5 +1,5 @@
 ---
-title: nrcatalogtools.catalog
+title: nrcats.catalog
 parent: API Reference
 nav_order: 2
 ---
@@ -7,7 +7,7 @@ nav_order: 2
 <!-- GENERATED FILE — DO NOT EDIT. Regenerate with `python bin/generate_api_docs.py`. -->
 {% raw %}
 
-# `nrcatalogtools.catalog`
+# `nrcats.catalog`
 
 Abstract base classes and shared implementation for NR waveform catalogs.
 
@@ -412,7 +412,7 @@ Retrieve specific quantities for one simulation
 
 | Name | Type | Description |
 |---|---|---|
-|  | `waveform.WaveformModes` | nrcatalogtools.waveform.WaveformModes: Waveform modes |
+|  | `waveform.WaveformModes` | nrcats.waveform.WaveformModes: Waveform modes |
 
 ---
 

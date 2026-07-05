@@ -1,5 +1,5 @@
 ---
-title: nrcatalogtools.waveform.loaders
+title: nrcats.waveform.loaders
 parent: API Reference
 nav_order: 8
 ---
@@ -7,7 +7,7 @@ nav_order: 8
 <!-- GENERATED FILE — DO NOT EDIT. Regenerate with `python bin/generate_api_docs.py`. -->
 {% raw %}
 
-# `nrcatalogtools.waveform.loaders`
+# `nrcats.waveform.loaders`
 
 Standalone loader functions for WaveformModes.
 
@@ -16,7 +16,7 @@ so the caller in ``modes.py`` can do::
 
     @classmethod
     def load_from_h5(cls, ...):
-        from nrcatalogtools.waveform.loaders import load_from_h5 as _impl
+        from nrcats.waveform.loaders import load_from_h5 as _impl
         return _impl(cls, ...)
 
 No import of ``WaveformModes`` is needed here, avoiding circular imports.

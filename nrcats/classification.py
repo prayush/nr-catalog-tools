@@ -59,19 +59,19 @@ class NRCatalogClassifier:
         tag = catalog_name.upper()
         if tag == "SXS":
             if self._sxs_catalog is None:
-                import nrcatalogtools as nrcat
+                import nrcats as nrcat
 
                 self._sxs_catalog = nrcat.SXSCatalog.load(download=False)
             return self._sxs_catalog
         elif tag == "RIT":
             if self._rit_catalog is None:
-                import nrcatalogtools as nrcat
+                import nrcats as nrcat
 
                 self._rit_catalog = nrcat.RITCatalog.load()
             return self._rit_catalog
         elif tag == "MAYA":
             if self._maya_catalog is None:
-                import nrcatalogtools as nrcat
+                import nrcats as nrcat
 
                 self._maya_catalog = nrcat.MayaCatalog.load()
             return self._maya_catalog
@@ -93,10 +93,10 @@ class NRCatalogClassifier:
         if self._nrsur_sims is not None:
             return self._nrsur_sims
 
-        import nrcatalogtools
+        import nrcats
         import json
 
-        base_dir = os.path.dirname(os.path.dirname(nrcatalogtools.__file__))
+        base_dir = os.path.dirname(os.path.dirname(nrcats.__file__))
         path = os.path.join(base_dir, "catalog_organization", "sxs_classification.json")
 
         sims = set()

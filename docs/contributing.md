@@ -58,7 +58,7 @@ python -m pytest test/ -v -m "not cross_catalog"
 With coverage:
 
 ```bash
-python -m coverage run --source=nrcatalogtools -m pytest test/ -m "not cross_catalog"
+python -m coverage run --source=nrcats -m pytest test/ -m "not cross_catalog"
 python -m coverage report
 ```
 
@@ -103,8 +103,8 @@ New catalogs plug in via the [registry](api/registry.md) without touching core c
 2. Register it:
 
    ```python
-   from nrcatalogtools.catalog import CatalogBase
-   from nrcatalogtools.registry import register_catalog
+   from nrcats.catalog import CatalogBase
+   from nrcats.registry import register_catalog
 
    @register_catalog("MYCAT")
    class MyCatalog(CatalogBase):
@@ -112,7 +112,7 @@ New catalogs plug in via the [registry](api/registry.md) without touching core c
    ```
 
 3. If your catalog's metadata schema differs, add a key-mapping YAML under
-   `nrcatalogtools/schemas/` (see `rit_keys.yaml` for the pattern) and wire it in
+   `nrcats/schemas/` (see `rit_keys.yaml` for the pattern) and wire it in
    [`metadata`](api/metadata.md).
 4. Add the module to the `MODULES` list in `bin/generate_api_docs.py` so it appears
    in the API reference, and document catalog-specific conventions in

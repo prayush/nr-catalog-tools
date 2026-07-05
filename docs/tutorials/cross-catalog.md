@@ -42,7 +42,7 @@ rotation $$R \in SO(3)$$.
 ## 1. Load both catalogs
 
 ```python
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 
 ritcat = nrcat.RITCatalog.load(verbosity=0)
 sxscat = nrcat.SXSCatalog.load(download=False, verbosity=0)

@@ -123,7 +123,7 @@ print(f"Total MAYA Non-Spinning Non-Eccentric: {len(maya_circular_nonspinning)}"
 # -------------------------------------------------------------
 # C. Waveform Pipeline Loading Integration
 # -------------------------------------------------------------
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 
 rit_cat = nrcat.RITCatalog.load()
 
@@ -139,10 +139,10 @@ if rit_precessing_ecc:
 
 ## 4. Reusable Class API Usage
 
-All classification operations are powered by the `NRCatalogClassifier` class integrated into the `nrcatalogtools` library. Users can also import this class to dynamically query simulation groups under any desired spin or eccentricity thresholds:
+All classification operations are powered by the `NRCatalogClassifier` class integrated into the `nrcats` library. Users can also import this class to dynamically query simulation groups under any desired spin or eccentricity thresholds:
 
 ```python
-from nrcatalogtools import NRCatalogClassifier
+from nrcats import NRCatalogClassifier
 
 # 1. Initialize classifier with custom or default thresholds
 classifier = NRCatalogClassifier(spin_threshold=0.001, ecc_threshold=0.005)

@@ -1,5 +1,5 @@
 ---
-title: nrcatalogtools.lvc
+title: nrcats.lvc
 parent: API Reference
 nav_order: 15
 ---
@@ -7,7 +7,7 @@ nav_order: 15
 <!-- GENERATED FILE — DO NOT EDIT. Regenerate with `python bin/generate_api_docs.py`. -->
 {% raw %}
 
-# `nrcatalogtools.lvc`
+# `nrcats.lvc`
 
 Frame-rotation helpers and LVCNR format utilities.
 

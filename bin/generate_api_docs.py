@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Generate the markdown API reference for the just-the-docs documentation site.
 
-Statically analyses ``nrcatalogtools`` with griffe (no runtime imports, so heavy
+Statically analyses ``nrcats`` with griffe (no runtime imports, so heavy
 dependencies like lalsuite/pycbc/sxs are NOT required) and renders one markdown
 page per module into ``docs/api/``, each with just-the-docs front matter.
 
@@ -29,61 +29,61 @@ OUTPUT_DIR = REPO_ROOT / "docs" / "api"
 MODULES = [
     (
         "catalog",
-        "nrcatalogtools.catalog",
+        "nrcats.catalog",
         "Abstract base classes `CatalogABC` and `CatalogBase`",
     ),
     (
         "rit",
-        "nrcatalogtools.rit",
+        "nrcats.rit",
         "`RITCatalog` and `RITCatalogHelper` for the RIT catalog",
     ),
-    ("sxs", "nrcatalogtools.sxs", "`SXSCatalog` wrapping the `sxs` package"),
-    ("maya", "nrcatalogtools.maya", "`MayaCatalog` for the Georgia Tech MAYA catalog"),
+    ("sxs", "nrcats.sxs", "`SXSCatalog` wrapping the `sxs` package"),
+    ("maya", "nrcats.maya", "`MayaCatalog` for the Georgia Tech MAYA catalog"),
     (
         "waveform.modes",
-        "nrcatalogtools.waveform.modes",
+        "nrcats.waveform.modes",
         "The central `WaveformModes` object",
     ),
     (
         "waveform.matching",
-        "nrcatalogtools.waveform.matching",
+        "nrcats.waveform.matching",
         "Mode matching, rotation, and PSD helpers",
     ),
     (
         "waveform.loaders",
-        "nrcatalogtools.waveform.loaders",
+        "nrcats.waveform.loaders",
         "HDF5 / tar.gz loaders for `WaveformModes`",
     ),
     (
         "waveform.units",
-        "nrcatalogtools.waveform.units",
+        "nrcats.waveform.units",
         "Waveform-level constants and time-step helper",
     ),
     (
         "surrogate",
-        "nrcatalogtools.surrogate",
+        "nrcats.surrogate",
         "NRSur7dq4 loading, evaluation, and prior check",
     ),
     (
         "comparisons",
-        "nrcatalogtools.comparisons",
+        "nrcats.comparisons",
         "End-to-end NR vs surrogate comparison pipeline",
     ),
     (
         "classification",
-        "nrcatalogtools.classification",
+        "nrcats.classification",
         "Spin/eccentricity classification of catalogs",
     ),
     (
         "metadata",
-        "nrcatalogtools.metadata",
+        "nrcats.metadata",
         "Cross-catalog key mappings and parameter extraction",
     ),
-    ("registry", "nrcatalogtools.registry", "Catalog plugin registry"),
-    ("lvc", "nrcatalogtools.lvc", "Frame-rotation helpers and LVCNR format utilities"),
+    ("registry", "nrcats.registry", "Catalog plugin registry"),
+    ("lvc", "nrcats.lvc", "Frame-rotation helpers and LVCNR format utilities"),
     (
         "utils",
-        "nrcatalogtools.utils",
+        "nrcats.utils",
         "Cache paths, download helpers, unit conversions",
     ),
 ]
@@ -346,7 +346,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    pkg = griffe.load("nrcatalogtools", search_paths=[str(REPO_ROOT)])
+    pkg = griffe.load("nrcats", search_paths=[str(REPO_ROOT)])
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     stale = []

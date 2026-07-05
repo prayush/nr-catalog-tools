@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import lal
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 from mayawaves.utils.catalogutils import Catalog as MWCatalog
 import pycbc.waveform as wf
 import pycbc.psd

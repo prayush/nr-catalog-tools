@@ -53,13 +53,13 @@ from pycbc.pnutils import mtotal_eta_to_mass1_mass2
 # Usage example — translate one simulation's metadata to another catalog's
 # key convention:
 #
-#   from nrcatalogtools.metadata import RIT_KEYS, SXS_KEYS, MAYA_KEYS
+#   from nrcats.metadata import RIT_KEYS, SXS_KEYS, MAYA_KEYS
 #   q_rit  = metadata_rit[RIT_KEYS["mass_ratio"]]
 #   q_sxs  = metadata_sxs[SXS_KEYS["mass_ratio"]]
 #   q_maya = metadata_maya[MAYA_KEYS["mass_ratio"]]
 #
 # For quantities whose catalog key is None, see the per-catalog YAML file
-# (nrcatalogtools/schemas/) for the access pattern.
+# (nrcats/schemas/) for the access pattern.
 # ---------------------------------------------------------------------------
 
 _SCHEMAS_DIR = pathlib.Path(__file__).parent / "schemas"
@@ -71,7 +71,7 @@ def _load_schema(filename: str) -> dict:
     Parameters
     ----------
     filename : str
-        YAML file name relative to ``nrcatalogtools/schemas/``.
+        YAML file name relative to ``nrcats/schemas/``.
 
     Returns
     -------
@@ -126,7 +126,7 @@ CANONICAL_TO_CATALOG = {
 
 Example::
 
-    >>> from nrcatalogtools.metadata import CANONICAL_TO_CATALOG
+    >>> from nrcats.metadata import CANONICAL_TO_CATALOG
     >>> CANONICAL_TO_CATALOG["mass_ratio"]
     {'RIT': 'relaxed-mass-ratio-1-over-2', 'SXS': 'reference_mass_ratio', 'MAYA': 'q'}
     >>> CANONICAL_TO_CATALOG["spin1x"]

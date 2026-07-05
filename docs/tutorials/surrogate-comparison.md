@@ -38,7 +38,7 @@ single simulation — loads the NR waveform, generates matching surrogate modes,
 per-mode matches and phase-drift metrics, and writes a CSV plus a diagnostic figure:
 
 ```python
-from nrcatalogtools.comparisons import compare_sim_vs_surrogate
+from nrcats.comparisons import compare_sim_vs_surrogate
 
 results = compare_sim_vs_surrogate(
     catalog_name="SXS",
@@ -65,7 +65,7 @@ each stage.
 ## Step 1: Load the NR waveform and its parameters
 
 ```python
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 
 cat = nrcat.load_catalog("SXS")
 sim_name = "SXS:BBH:0001"
@@ -83,7 +83,7 @@ helpers consume.
 ## Step 2: Check the surrogate prior
 
 ```python
-from nrcatalogtools.surrogate import check_surrogate_prior
+from nrcats.surrogate import check_surrogate_prior
 
 assert check_surrogate_prior(params), \
     f"{sim_name} lies outside the NRSur7dq4 validity volume"
@@ -95,7 +95,7 @@ To pre-filter an entire catalog instead, use
 ## Step 3: Generate surrogate modes
 
 ```python
-from nrcatalogtools.surrogate import generate_surrogate_modes
+from nrcats.surrogate import generate_surrogate_modes
 
 delta_t = 1.0 / 4096  # seconds
 
@@ -113,7 +113,7 @@ h_sur, f_low_eff = generate_surrogate_modes(
 ## Step 4: Extract the matching NR modes
 
 ```python
-from nrcatalogtools.surrogate import SURROGATE_MODES
+from nrcats.surrogate import SURROGATE_MODES
 
 h_nr = {
     (ell, em): wfm.get_mode(ell, em,
@@ -133,7 +133,7 @@ Each mode $$(\ell, m)$$ oscillates at roughly $$m/2$$ times the orbital frequenc
 its lower frequency cutoff must be scaled accordingly before matching:
 
 ```python
-from nrcatalogtools.waveform.matching import (
+from nrcats.waveform.matching import (
     compute_mode_match,
     compute_phase_diff_per_cycle,
     mode_f_lower,
@@ -166,7 +166,7 @@ rotates a whole mode dictionary via Wigner D-matrices:
 
 ```python
 import quaternionic
-from nrcatalogtools.waveform.matching import apply_wigner_rotation_to_mode_dict
+from nrcats.waveform.matching import apply_wigner_rotation_to_mode_dict
 
 R = quaternionic.array.from_euler_angles(alpha, beta, gamma)
 h_sur_rot = apply_wigner_rotation_to_mode_dict(h_sur, R, ell_max=4)

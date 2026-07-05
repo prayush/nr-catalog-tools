@@ -76,7 +76,7 @@ Installed automatically by pip:
 ## Verify the installation
 
 ```python
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 print(nrcat.list_catalogs())   # {'RIT', 'SXS', 'MAYA'}
 ```
 

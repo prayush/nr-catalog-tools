@@ -1,5 +1,5 @@
 ---
-title: nrcatalogtools.sxs
+title: nrcats.sxs
 parent: API Reference
 nav_order: 4
 ---
@@ -7,7 +7,7 @@ nav_order: 4
 <!-- GENERATED FILE — DO NOT EDIT. Regenerate with `python bin/generate_api_docs.py`. -->
 {% raw %}
 
-# `nrcatalogtools.sxs`
+# `nrcats.sxs`
 
 SXS catalog interface.
 
@@ -66,7 +66,7 @@ interface over the SXS Zenodo-hosted catalog.  Key design points:
   ``load()`` is called multiple times in the same process.
 
 Example:
-    >>> import nrcatalogtools as nrcat
+    >>> import nrcats as nrcat
     >>> cat = nrcat.SXSCatalog.load(download=False)
     >>> wfm = cat.get("SXS:BBH:0001")
 
@@ -306,7 +306,7 @@ entirely through the ``sxs`` package rather than via direct HDF5 reads.
 
 | Name | Type | Description |
 |---|---|---|
-|  | `waveform.WaveformModes` | nrcatalogtools.waveform.WaveformModes: Waveform object with the |
+|  | `waveform.WaveformModes` | nrcats.waveform.WaveformModes: Waveform object with the |
 |  | `waveform.WaveformModes` | catalog metadata attached. |
 
 ---

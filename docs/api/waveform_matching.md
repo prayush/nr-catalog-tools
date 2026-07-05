@@ -1,5 +1,5 @@
 ---
-title: nrcatalogtools.waveform.matching
+title: nrcats.waveform.matching
 parent: API Reference
 nav_order: 7
 ---
@@ -7,7 +7,7 @@ nav_order: 7
 <!-- GENERATED FILE — DO NOT EDIT. Regenerate with `python bin/generate_api_docs.py`. -->
 {% raw %}
 
-# `nrcatalogtools.waveform.matching`
+# `nrcats.waveform.matching`
 
 Standalone waveform matching and rotation helpers.
 

@@ -7,6 +7,6 @@
 from __future__ import print_function, division, absolute_import
 
 try:
-    from .nrcatalogtools import *
+    from .nrcats import *
 except ImportError:
     pass

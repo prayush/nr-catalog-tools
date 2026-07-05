@@ -1,5 +1,5 @@
 ---
-title: nrcatalogtools.classification
+title: nrcats.classification
 parent: API Reference
 nav_order: 12
 ---
@@ -7,7 +7,7 @@ nav_order: 12
 <!-- GENERATED FILE — DO NOT EDIT. Regenerate with `python bin/generate_api_docs.py`. -->
 {% raw %}
 
-# `nrcatalogtools.classification`
+# `nrcats.classification`
 
 Dynamic threshold-based classification and organization of numerical relativity catalogs.
 

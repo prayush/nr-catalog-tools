@@ -46,14 +46,14 @@ empty, then returns a `WaveformModes` object. See [waveform.md](waveform.md) for
 
 ## RIT Catalog
 
-**Class:** `nrcatalogtools.RITCatalog`  
+**Class:** `nrcats.RITCatalog`  
 **Source:** [api/rit.md](api/rit.md)  
 **Data host:** `https://ccrg.rit.edu/content/data/rit-waveform-catalog`
 
 ### Loading
 
 ```python
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 
 ritcat = nrcat.RITCatalog.load(verbosity=0)
 
@@ -110,14 +110,14 @@ q1_ns = df[
 
 ## SXS Catalog
 
-**Class:** `nrcatalogtools.SXSCatalog`  
+**Class:** `nrcats.SXSCatalog`  
 **Source:** [api/sxs.md](api/sxs.md)  
 **Data host:** Zenodo (via the `sxs` package ≥ 2024.0.0)
 
 ### Loading
 
 ```python
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 
 # download=False uses only locally cached data
 sxscat = nrcat.SXSCatalog.load(download=False, verbosity=0)
@@ -165,14 +165,14 @@ q1_ns = df[
 
 ## MAYA / GT Catalog
 
-**Class:** `nrcatalogtools.MayaCatalog`  
+**Class:** `nrcats.MayaCatalog`  
 **Source:** [api/maya.md](api/maya.md)  
 **Data host:** `https://cgpstorage.ph.utexas.edu/`
 
 ### Loading
 
 ```python
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 
 mayacat = nrcat.MayaCatalog.load(verbosity=0)
 
@@ -244,12 +244,12 @@ Initial GW frequency conversion:
 ## Exhaustive Metadata Key Mapping
 
 The table below maps every physical quantity to its key name in each catalog's raw metadata,
-the normalized key used internally by `nrcatalogtools`, and the corresponding PyCBC parameter
+the normalized key used internally by `nrcats`, and the corresponding PyCBC parameter
 name. Units are **dimensionless code units** (total mass $$M=1$$, $$G=c=1$$) unless noted.
 
 ### Identification
 
-| Physical quantity | RIT (raw `.txt`, hyphens) | SXS (`snake_case`) | MAYA (`snake_case`) | PyCBC / nrcatalogtools output |
+| Physical quantity | RIT (raw `.txt`, hyphens) | SXS (`snake_case`) | MAYA (`snake_case`) | PyCBC / nrcats output |
 |---|---|---|---|---|
 | Catalog simulation ID | `catalog-tag` + `resolution-tag` + `id-tag` → e.g. `RIT:BBH:0001-n100-id3` | `alternative_names` → e.g. `SXS:BBH:0001` | `GTID` → e.g. `GT0001` | `simulation_name` (index key) |
 | Internal run name | `run-name` | `simulation_name` | `GT_Tag` | — |
@@ -348,7 +348,7 @@ name. Units are **dimensionless code units** (total mass $$M=1$$, $$G=c=1$$) unl
 | Finite difference order | `fd-order` | — | — | — |
 | CFL factor | `cfl` | — | — | — |
 
-### Cache / Path Bookkeeping (added by nrcatalogtools)
+### Cache / Path Bookkeeping (added by nrcats)
 
 | Key | RIT | SXS | MAYA |
 |---|---|---|---|

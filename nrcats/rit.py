@@ -47,8 +47,8 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 
-from nrcatalogtools import catalog, utils
-from nrcatalogtools.registry import register_catalog
+from nrcats import catalog, utils
+from nrcats.registry import register_catalog
 
 # Module-level singleton — avoids the stale-result bug that lru_cache caused:
 # lru_cache keyed on all arguments, so load(download=True) after an earlier
@@ -77,7 +77,7 @@ class RITCatalog(catalog.CatalogBase):
       ``load()`` is called multiple times in the same process.
 
     Example:
-        >>> import nrcatalogtools as nrcat
+        >>> import nrcats as nrcat
         >>> cat = nrcat.RITCatalog.load(verbosity=0)
         >>> wfm = cat.get("RIT:BBH:0001-n100-id3")
     """
@@ -134,7 +134,7 @@ class RITCatalog(catalog.CatalogBase):
         See Also
         --------
         RITCatalog.reload : Force a fresh download and replace the singleton.
-        nrcatalogtools.utils.rit_catalog_info : Catalog info, including cache directory.
+        nrcats.utils.rit_catalog_info : Catalog info, including cache directory.
         """
         global _rit_catalog_singleton
         # Return the cached instance unless the caller explicitly wants a

@@ -1,5 +1,5 @@
 ---
-title: nrcatalogtools.waveform.units
+title: nrcats.waveform.units
 parent: API Reference
 nav_order: 9
 ---
@@ -7,7 +7,7 @@ nav_order: 9
 <!-- GENERATED FILE — DO NOT EDIT. Regenerate with `python bin/generate_api_docs.py`. -->
 {% raw %}
 
-# `nrcatalogtools.waveform.units`
+# `nrcats.waveform.units`
 
 Waveform-level constants and time-step helper.
 

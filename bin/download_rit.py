@@ -5,7 +5,7 @@ Script: download_rit.py
 Description:
 ------------
 This script is designed to download waveform data for all simulations in the RIT NR catalog
-using the `nrcatalogtools` Python library.
+using the `nrcats` Python library.
 
 Workflow:
 ---------
@@ -14,7 +14,7 @@ Workflow:
 
 Intended Use:
 -------------
-- Run this script in an environment where `nrcatalogtools` is installed and configured.
+- Run this script in an environment where `nrcats` is installed and configured.
 - The downloaded waveform files can be used for further numerical relativity analysis.
 
 Notes:
@@ -24,7 +24,7 @@ Notes:
   by default, this script downloads the "waveform" data (not "psi4").
 """
 
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 
 print(
     f"""Data will be downloaded in {nrcat.utils.rit_catalog_info['data_dir']}.
