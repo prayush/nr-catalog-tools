@@ -38,6 +38,7 @@ pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
+/cov_badge.svg
 .tox/
 .nox/
 .coverage
@@ -127,6 +128,7 @@ docs/.jekyll-cache/
 docs/.bundle/
 docs/Gemfile.lock
 docs/vendor/
+docs/cov_badge.svg
 
 # mypy
 .mypy_cache/

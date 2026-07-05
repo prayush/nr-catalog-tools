@@ -40,7 +40,7 @@ docs = [
 where = ["."]
 
 [tool.setuptools.package-data]
-nrcatalogtools = ["schemas/*.yaml"]
+nrcats = ["schemas/*.yaml"]
 
 [tool.setuptools_scm]
 # When building from a commit that has no tag (e.g. during development),

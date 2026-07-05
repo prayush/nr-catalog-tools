@@ -1,5 +1,5 @@
 ---
-title: nrcatalogtools.comparisons
+title: nrcats.comparisons
 parent: API Reference
 nav_order: 11
 ---
@@ -7,7 +7,7 @@ nav_order: 11
 <!-- GENERATED FILE — DO NOT EDIT. Regenerate with `python bin/generate_api_docs.py`. -->
 {% raw %}
 
-# `nrcatalogtools.comparisons`
+# `nrcats.comparisons`
 
 NR vs NRSur7dq4 comparison utilities.
 

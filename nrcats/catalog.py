@@ -26,8 +26,8 @@ from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
     import sxs
 
-from nrcatalogtools import waveform
-from nrcatalogtools import metadata as md
+from nrcats import waveform
+from nrcats import metadata as md
 
 
 class CatalogABC(ABC):
@@ -280,7 +280,7 @@ class CatalogBase(CatalogABC):
             IOError: If `quantity` is not one of the options above
 
         Returns:
-            nrcatalogtools.waveform.WaveformModes: Waveform modes
+            nrcats.waveform.WaveformModes: Waveform modes
         """
         if sim_name not in self._simulations:
             raise IOError(

@@ -5,7 +5,7 @@ so the caller in ``modes.py`` can do::
 
     @classmethod
     def load_from_h5(cls, ...):
-        from nrcatalogtools.waveform.loaders import load_from_h5 as _impl
+        from nrcats.waveform.loaders import load_from_h5 as _impl
         return _impl(cls, ...)
 
 No import of ``WaveformModes`` is needed here, avoiding circular imports.
@@ -24,7 +24,7 @@ from sxs.waveforms.format_handlers.nrar import (
     translate_data_type_to_sxs_string,
 )
 
-from nrcatalogtools.waveform.units import ELL_MIN, ELL_MAX, _modal_dt
+from nrcats.waveform.units import ELL_MIN, ELL_MAX, _modal_dt
 
 
 def load_from_h5(cls, file_path_or_open_file, metadata={}, verbosity=0):

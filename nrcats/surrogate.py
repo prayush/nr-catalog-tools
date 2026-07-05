@@ -447,7 +447,7 @@ def surrogate_dict_to_waveform_modes(h_sur_dict: dict, ell_max: int = 4):
     -------
     WaveformModes
     """
-    from nrcatalogtools.waveform.modes import WaveformModes
+    from nrcats.waveform.modes import WaveformModes
 
     if not h_sur_dict:
         raise ValueError("h_sur_dict is empty")

@@ -1,5 +1,5 @@
 ---
-title: nrcatalogtools.rit
+title: nrcats.rit
 parent: API Reference
 nav_order: 3
 ---
@@ -7,7 +7,7 @@ nav_order: 3
 <!-- GENERATED FILE — DO NOT EDIT. Regenerate with `python bin/generate_api_docs.py`. -->
 {% raw %}
 
-# `nrcatalogtools.rit`
+# `nrcats.rit`
 
 RIT catalog interface.
 
@@ -76,7 +76,7 @@ Key design points:
   ``load()`` is called multiple times in the same process.
 
 Example:
-    >>> import nrcatalogtools as nrcat
+    >>> import nrcats as nrcat
     >>> cat = nrcat.RITCatalog.load(verbosity=0)
     >>> wfm = cat.get("RIT:BBH:0001-n100-id3")
 
@@ -104,7 +104,7 @@ singleton, or call ``RITCatalog.reload()`` for the same effect.
 
 > **See Also**
 > RITCatalog.reload : Force a fresh download and replace the singleton.
-> nrcatalogtools.utils.rit_catalog_info : Catalog info, including cache directory.
+> nrcats.utils.rit_catalog_info : Catalog info, including cache directory.
 
 ---
 

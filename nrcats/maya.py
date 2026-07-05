@@ -33,8 +33,8 @@ import functools
 import os
 import zipfile
 import pandas as pd
-from nrcatalogtools import catalog, utils
-from nrcatalogtools.registry import register_catalog
+from nrcats import catalog, utils
+from nrcats.registry import register_catalog
 
 # Module-level singleton — same stale-result fix as RITCatalog.
 _maya_catalog_singleton = None
@@ -58,7 +58,7 @@ class MayaCatalog(catalog.CatalogBase):
       ``load()`` is called multiple times in the same process.
 
     Example:
-        >>> import nrcatalogtools as nrcat
+        >>> import nrcats as nrcat
         >>> cat = nrcat.MayaCatalog.load()
         >>> wfm = cat.get("GT0001")
     """

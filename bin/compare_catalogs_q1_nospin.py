@@ -31,7 +31,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 TOTAL_MASS = 60.0  # Msun

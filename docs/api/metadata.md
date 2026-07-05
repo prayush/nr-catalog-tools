@@ -1,5 +1,5 @@
 ---
-title: nrcatalogtools.metadata
+title: nrcats.metadata
 parent: API Reference
 nav_order: 13
 ---
@@ -7,7 +7,7 @@ nav_order: 13
 <!-- GENERATED FILE — DO NOT EDIT. Regenerate with `python bin/generate_api_docs.py`. -->
 {% raw %}
 
-# `nrcatalogtools.metadata`
+# `nrcats.metadata`
 
 Cross-catalog metadata key mappings and source-parameter extraction.
 
@@ -87,7 +87,7 @@ Dict mapping each canonical quantity name to its key in every catalog.
 
 Example::
 
-    >>> from nrcatalogtools.metadata import CANONICAL_TO_CATALOG
+    >>> from nrcats.metadata import CANONICAL_TO_CATALOG
     >>> CANONICAL_TO_CATALOG["mass_ratio"]
     {'RIT': 'relaxed-mass-ratio-1-over-2', 'SXS': 'reference_mass_ratio', 'MAYA': 'q'}
     >>> CANONICAL_TO_CATALOG["spin1x"]

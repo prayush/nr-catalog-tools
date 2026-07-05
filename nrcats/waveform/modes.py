@@ -13,14 +13,14 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from sxs import TimeSeries as sxs_TimeSeries
 from sxs import WaveformModes as sxs_WaveformModes
 
-from nrcatalogtools import metadata as md
-from nrcatalogtools import utils
-from nrcatalogtools.lvc import (
+from nrcats import metadata as md
+from nrcats import utils
+from nrcats.lvc import (
     check_interp_req,
     get_nr_to_lal_rotation_angles,
     get_ref_vals,
 )
-from nrcatalogtools.waveform.units import _modal_dt
+from nrcats.waveform.units import _modal_dt
 
 
 class WaveformModes(sxs_WaveformModes):
@@ -220,9 +220,9 @@ class WaveformModes(sxs_WaveformModes):
     def load_from_h5(cls, file_path_or_open_file, metadata={}, verbosity=0):
         """Load SWSH waveform modes from an HDF5 file (RIT/MAYA catalog format).
 
-        See ``nrcatalogtools.waveform.loaders.load_from_h5`` for full docs.
+        See ``nrcats.waveform.loaders.load_from_h5`` for full docs.
         """
-        from nrcatalogtools.waveform.loaders import load_from_h5 as _impl
+        from nrcats.waveform.loaders import load_from_h5 as _impl
 
         return _impl(cls, file_path_or_open_file, metadata, verbosity)
 
@@ -230,9 +230,9 @@ class WaveformModes(sxs_WaveformModes):
     def load_from_targz(cls, file_path, metadata={}, verbosity=0):
         """Load SWSH waveform modes from a ``.tar.gz`` archive (RIT psi4 format).
 
-        See ``nrcatalogtools.waveform.loaders.load_from_targz`` for full docs.
+        See ``nrcats.waveform.loaders.load_from_targz`` for full docs.
         """
-        from nrcatalogtools.waveform.loaders import load_from_targz as _impl
+        from nrcats.waveform.loaders import load_from_targz as _impl
 
         return _impl(cls, file_path, metadata, verbosity)
 
@@ -582,7 +582,7 @@ class WaveformModes(sxs_WaveformModes):
         -------
         pycbc.types.TimeSeries (complex128)
         """
-        from nrcatalogtools.waveform.matching import interpolate_in_amp_phase
+        from nrcats.waveform.matching import interpolate_in_amp_phase
 
         if delta_t_seconds is not None and delta_t_Msun is not None:
             raise ValueError(

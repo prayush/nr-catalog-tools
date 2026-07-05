@@ -30,8 +30,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import sxs
-from nrcatalogtools import catalog, waveform
-from nrcatalogtools.registry import register_catalog
+from nrcats import catalog, waveform
+from nrcats.registry import register_catalog
 
 # Module-level singleton — same stale-result fix as RITCatalog.
 _sxs_catalog_singleton = None
@@ -57,7 +57,7 @@ class SXSCatalog(catalog.CatalogBase):
       ``load()`` is called multiple times in the same process.
 
     Example:
-        >>> import nrcatalogtools as nrcat
+        >>> import nrcats as nrcat
         >>> cat = nrcat.SXSCatalog.load(download=False)
         >>> wfm = cat.get("SXS:BBH:0001")
     """
@@ -277,7 +277,7 @@ class SXSCatalog(catalog.CatalogBase):
                 Defaults to True.
 
         Returns:
-            nrcatalogtools.waveform.WaveformModes: Waveform object with the
+            nrcats.waveform.WaveformModes: Waveform object with the
             catalog metadata attached.
         """
         # sxs >= 2024 uses a Simulation_v3 object; access .strain for WaveformModes.

@@ -30,7 +30,7 @@ Metadata key mappings:
 
 Example
 -------
->>> import nrcatalogtools as nrcat
+>>> import nrcats as nrcat
 >>> cat = nrcat.RITCatalog.load()
 >>> wfm = cat.get("RIT:BBH:0001-n100-id3")
 >>> hp, hc = wfm.get_td_waveform(total_mass=60., distance=100.,

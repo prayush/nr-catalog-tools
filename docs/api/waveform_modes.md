@@ -1,5 +1,5 @@
 ---
-title: nrcatalogtools.waveform.modes
+title: nrcats.waveform.modes
 parent: API Reference
 nav_order: 6
 ---
@@ -7,7 +7,7 @@ nav_order: 6
 <!-- GENERATED FILE — DO NOT EDIT. Regenerate with `python bin/generate_api_docs.py`. -->
 {% raw %}
 
-# `nrcatalogtools.waveform.modes`
+# `nrcats.waveform.modes`
 
 WaveformModes class and related helpers.
 
@@ -64,7 +64,7 @@ load_from_h5(file_path_or_open_file, metadata={}, verbosity=0)
 
 Load SWSH waveform modes from an HDF5 file (RIT/MAYA catalog format).
 
-See ``nrcatalogtools.waveform.loaders.load_from_h5`` for full docs.
+See ``nrcats.waveform.loaders.load_from_h5`` for full docs.
 
 ---
 
@@ -76,7 +76,7 @@ load_from_targz(file_path, metadata={}, verbosity=0)
 
 Load SWSH waveform modes from a ``.tar.gz`` archive (RIT psi4 format).
 
-See ``nrcatalogtools.waveform.loaders.load_from_targz`` for full docs.
+See ``nrcats.waveform.loaders.load_from_targz`` for full docs.
 
 ---
 

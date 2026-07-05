@@ -14,7 +14,7 @@ nav_order: 6
 
 ---
 
-**Class:** `nrcatalogtools.WaveformModes`  
+**Class:** `nrcats.WaveformModes`  
 **Inherits from:** `sxs.WaveformModes` (ndarray subclass)
 
 > **Auto-generated API reference**: For a complete method listing with signatures and
@@ -157,7 +157,7 @@ Uses the `spherical` package for Wigner D-matrix computation.
 ### Rotating a mode dict (surrogate / PyCBC format)
 
 ```python
-from nrcatalogtools import apply_wigner_rotation_to_mode_dict
+from nrcats import apply_wigner_rotation_to_mode_dict
 
 rotated_modes = apply_wigner_rotation_to_mode_dict(
     mode_dict,      # {(ell, m): pycbc.TimeSeries, ...}
@@ -229,7 +229,7 @@ units**:
 | Time | $$GM_\text{tot}/c^3$$ |
 | Amplitude ($$r \, h_{\ell m}$$) | $$GM_\text{tot}/c^2$$ |
 
-Physical conversion factors (from [`nrcatalogtools.utils`](api/utils.md)):
+Physical conversion factors (from [`nrcats.utils`](api/utils.md)):
 
 ```python
 import lal

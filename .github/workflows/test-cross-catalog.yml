@@ -81,7 +81,7 @@ jobs:
         run: |
           python - <<'EOF'
           import warnings; warnings.filterwarnings("ignore")
-          import nrcatalogtools as nrcat
+          import nrcats as nrcat
           cat = nrcat.RITCatalog.load(download=False, verbosity=0)
           cat.download_waveform_data("RIT:BBH:0001-n100-id3")
           print("RIT download done.")
@@ -104,7 +104,7 @@ jobs:
         run: |
           python - <<'EOF'
           import warnings; warnings.filterwarnings("ignore")
-          import nrcatalogtools as nrcat
+          import nrcats as nrcat
           cat = nrcat.MayaCatalog.load(verbosity=0)
           cat.download_waveform_data("GT0905")
           print("MAYA download done.")

@@ -1,5 +1,6 @@
 # Run the full unit-test suite and publish a coverage report as a workflow artefact.
-# Coverage is uploaded as an artefact (not to GitHub Pages, which is owned by docs.yml).
+# Coverage is uploaded as an artefact (not to GitHub Pages, which is owned by docs.yml —
+# it downloads the coverage-badge artifact produced here and deploys it alongside the site).
 
 name: Unit tests and coverage
 
@@ -58,7 +59,7 @@ jobs:
       - name: Run tests
         run: |
           python -m coverage run \
-            --source=nrcatalogtools \
+            --source=nrcats \
             -m pytest test/ \
             -v \
             --tb=short \
@@ -72,6 +73,13 @@ jobs:
         run: |
           python -m coverage html
           python -m coverage report
+
+      # Renders README's coverage badge from the same .coverage data;
+      # picked up by docs.yml (which owns GitHub Pages) and deployed
+      # alongside the rest of the site so it survives the force-orphan push.
+      - name: Generate coverage badge
+        if: always()
+        run: python test/.generate_badge.py
 
       # ── 7. Upload artefacts ───────────────────────────────────────────────
       - name: Upload test results
@@ -87,3 +95,10 @@ jobs:
         with:
           name: coverage-html
           path: htmlcov/
+
+      - name: Upload coverage badge
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-badge
+          path: cov_badge.svg

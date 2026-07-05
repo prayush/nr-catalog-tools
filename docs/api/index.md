@@ -34,7 +34,7 @@ which statically analyses the package with [griffe](https://mkdocstrings.github.
 All public classes and functions are also importable directly from the top-level package:
 
 ```python
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 
 # Catalogs
 nrcat.RITCatalog
@@ -66,7 +66,7 @@ nrcat.PYCBC_KEYS
 ### Surrogate and matching (sub-module imports)
 
 ```python
-from nrcatalogtools.surrogate import (
+from nrcats.surrogate import (
     load_nrsur7dq4,
     generate_surrogate_modes,
     check_surrogate_prior,
@@ -74,14 +74,14 @@ from nrcatalogtools.surrogate import (
     NR_MODES,
 )
 
-from nrcatalogtools.waveform.matching import (
+from nrcats.waveform.matching import (
     load_psd,
     compute_mode_match,
     compute_phase_diff_per_cycle,
     mode_f_lower,
 )
 
-from nrcatalogtools.comparisons import compare_sim_vs_surrogate, DELTA_T
+from nrcats.comparisons import compare_sim_vs_surrogate, DELTA_T
 ```
 
 ## Regenerating these pages

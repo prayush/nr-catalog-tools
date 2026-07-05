@@ -48,7 +48,7 @@ See [goal.md](goal.md) for the full scientific formalism.
 ## 2. Module Structure
 
 ```
-nrcatalogtools/
+nrcats/
 ├── __init__.py        # Public exports: MayaCatalog, RITCatalog, SXSCatalog,
 │                      #   WaveformModes, apply_wigner_rotation_to_mode_dict,
 │                      #   load_catalog, filter_by_surrogate_prior
@@ -79,14 +79,14 @@ nrcatalogtools/
 ## 3. Class Hierarchy
 
 ```
-CatalogABC  (nrcatalogtools/catalog.py)
-    └── CatalogBase  (nrcatalogtools/catalog.py)
-            ├── RITCatalog   (nrcatalogtools/rit.py)
-            ├── SXSCatalog   (nrcatalogtools/sxs.py)
-            └── MayaCatalog  (nrcatalogtools/maya.py)
+CatalogABC  (nrcats/catalog.py)
+    └── CatalogBase  (nrcats/catalog.py)
+            ├── RITCatalog   (nrcats/rit.py)
+            ├── SXSCatalog   (nrcats/sxs.py)
+            └── MayaCatalog  (nrcats/maya.py)
 
 sxs.WaveformModes  (from the sxs package)
-    └── WaveformModes  (nrcatalogtools/waveform/modes.py)
+    └── WaveformModes  (nrcats/waveform/modes.py)
 ```
 
 `CatalogBase` inherits from `CatalogABC` and owns a plain `dict` simulation registry stored directly in `self._simulations` keyed by simulation name, removing the dependency on `sxs.Catalog`.
@@ -175,7 +175,7 @@ wfm = sxscat.get("SXS:BBH:0001")     # uses sxs.load() internally
 
 **Important design note:** `_add_paths_to_metadata()` in `SXSCatalog` uses **lazy stub strings** (empty strings) for all path columns (`waveform_data_location`, `metadata_location`, etc.) because resolving real paths requires calling `sxs.load(sim_name)` per simulation, which would trigger ~2000 downloads. Paths are resolved on demand via the `sxs` package when `get()` is called.
 
-**API difference:** `SXSCatalog.get()` does not call `WaveformModes.load_from_h5()`; it calls `sxs.load(sim_name, auto_supersede=True)` to get the simulation object, then accesses `.strain` to get the `sxs.WaveformModes`, and wraps it into a `nrcatalogtools.WaveformModes`.
+**API difference:** `SXSCatalog.get()` does not call `WaveformModes.load_from_h5()`; it calls `sxs.load(sim_name, auto_supersede=True)` to get the simulation object, then accesses `.strain` to get the `sxs.WaveformModes`, and wraps it into a `nrcats.WaveformModes`.
 
 ### 4.4 `MayaCatalog` (`maya.py`)
 
@@ -379,7 +379,7 @@ Controlled by the `NR_CATALOG_CACHE` environment variable (defaults to `~/.cache
 
 ### Load all three catalogs
 ```python
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 
 # Using explicit class methods
 ritcat  = nrcat.RITCatalog.load(verbosity=0)
@@ -451,7 +451,7 @@ passing = nrcat.filter_by_surrogate_prior(ritcat, total_mass=40.0, verbose=True)
 
 ### Run the full NR vs NRSur7dq4 comparison for one simulation
 ```python
-from nrcatalogtools.comparisons import compare_sim_vs_surrogate
+from nrcats.comparisons import compare_sim_vs_surrogate
 
 compare_sim_vs_surrogate(
     catalog_name="RIT",
@@ -469,7 +469,7 @@ compare_sim_vs_surrogate(
 
 ## 11. `surrogate.py` — NRSur7dq4 Interface
 
-`nrcatalogtools.surrogate` provides a thin, package-native wrapper around
+`nrcats.surrogate` provides a thin, package-native wrapper around
 [gwsurrogate](https://github.com/sxs-collaboration/gwsurrogate)'s NRSur7dq4 model.
 `gwsurrogate` is an **optional** dependency; the rest of the package imports fine without it.
 
@@ -497,7 +497,7 @@ When the NR starting frequency is below the surrogate's training minimum, `gener
 
 ## 12. `comparisons.py` — NR vs Surrogate Pipeline
 
-`nrcatalogtools.comparisons.compare_sim_vs_surrogate` runs the complete per-simulation NR accuracy pipeline:
+`nrcats.comparisons.compare_sim_vs_surrogate` runs the complete per-simulation NR accuracy pipeline:
 
 1. Load catalog waveform via `load_catalog(catalog_name)`.
 2. Check surrogate prior; skip simulations outside the validity region.

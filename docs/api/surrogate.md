@@ -1,5 +1,5 @@
 ---
-title: nrcatalogtools.surrogate
+title: nrcats.surrogate
 parent: API Reference
 nav_order: 10
 ---
@@ -7,7 +7,7 @@ nav_order: 10
 <!-- GENERATED FILE — DO NOT EDIT. Regenerate with `python bin/generate_api_docs.py`. -->
 {% raw %}
 
-# `nrcatalogtools.surrogate`
+# `nrcats.surrogate`
 
 Surrogate waveform utilities for NR vs NRSur7dq4 comparisons.
 

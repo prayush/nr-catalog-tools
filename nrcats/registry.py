@@ -6,15 +6,15 @@ can be registered without editing ``__init__.py`` or any core module.
 Built-in registration
 ---------------------
 ``RITCatalog``, ``SXSCatalog``, and ``MayaCatalog`` are all registered
-automatically when the ``nrcatalogtools`` package is imported.
+automatically when the ``nrcats`` package is imported.
 
 Third-party registration
 ------------------------
 A downstream package (or a user in an interactive session) can register
 an additional catalog at runtime::
 
-    from nrcatalogtools.registry import register_catalog
-    from nrcatalogtools.catalog import CatalogBase
+    from nrcats.registry import register_catalog
+    from nrcats.catalog import CatalogBase
 
     @register_catalog("LVCNR")
     class LVCNRCatalog(CatalogBase):
@@ -25,7 +25,7 @@ Lookup
 ------
 ::
 
-    from nrcatalogtools.registry import get_catalog
+    from nrcats.registry import get_catalog
     cls = get_catalog("RIT")   # → RITCatalog
     obj = cls.load()
 """

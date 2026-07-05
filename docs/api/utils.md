@@ -1,5 +1,5 @@
 ---
-title: nrcatalogtools.utils
+title: nrcats.utils
 parent: API Reference
 nav_order: 16
 ---
@@ -7,7 +7,7 @@ nav_order: 16
 <!-- GENERATED FILE — DO NOT EDIT. Regenerate with `python bin/generate_api_docs.py`. -->
 {% raw %}
 
-# `nrcatalogtools.utils`
+# `nrcats.utils`
 
 Utility constants, cache-path definitions, and download helpers.
 

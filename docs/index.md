@@ -50,7 +50,7 @@ New catalogs can be added without touching core code via the
 ## Quick start
 
 ```python
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 
 # Load catalogs (explicit class methods)
 ritcat  = nrcat.RITCatalog.load()
@@ -104,7 +104,7 @@ For a step-by-step walkthrough, start with the
 ## Module structure
 
 ```
-nrcatalogtools/
+nrcats/
 ├── __init__.py        # Public API: RITCatalog, SXSCatalog, MayaCatalog,
 │                      #   WaveformModes, load_catalog, registry, key maps
 ├── catalog.py         # Abstract base CatalogABC + shared CatalogBase

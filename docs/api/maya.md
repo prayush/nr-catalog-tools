@@ -1,5 +1,5 @@
 ---
-title: nrcatalogtools.maya
+title: nrcats.maya
 parent: API Reference
 nav_order: 5
 ---
@@ -7,7 +7,7 @@ nav_order: 5
 <!-- GENERATED FILE — DO NOT EDIT. Regenerate with `python bin/generate_api_docs.py`. -->
 {% raw %}
 
-# `nrcatalogtools.maya`
+# `nrcats.maya`
 
 MAYA/GT catalog interface.
 
@@ -65,7 +65,7 @@ individual waveform HDF5 files.  Key design points:
   ``load()`` is called multiple times in the same process.
 
 Example:
-    >>> import nrcatalogtools as nrcat
+    >>> import nrcats as nrcat
     >>> cat = nrcat.MayaCatalog.load()
     >>> wfm = cat.get("GT0001")
 
