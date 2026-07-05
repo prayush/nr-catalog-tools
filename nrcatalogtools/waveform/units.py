@@ -3,7 +3,11 @@
 import numpy as np
 from scipy.stats import mode as stat_mode
 
-ELL_MIN, ELL_MAX = 2, 10
+ELL_MIN = 2
+"""Minimum spherical-harmonic ``ell`` retained when loading waveform modes."""
+
+ELL_MAX = 10
+"""Maximum spherical-harmonic ``ell`` retained when loading waveform modes."""
 
 
 def _modal_dt(time_array):

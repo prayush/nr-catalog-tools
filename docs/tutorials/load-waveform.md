@@ -1,3 +1,9 @@
+---
+title: Loading a waveform
+parent: Tutorials
+nav_order: 1
+---
+
 # Tutorial: Loading and Plotting a Waveform
 
 This tutorial walks through loading a binary black-hole merger waveform from the RIT catalog,
@@ -90,7 +96,7 @@ On first call `cat.get()` downloads the HDF5 waveform file from the RIT server
 
 ---
 
-## 5. Extract a physically-scaled $(2,2)$ mode
+## 5. Extract a physically-scaled $$(2,2)$$ mode
 
 ```python
 TOTAL_MASS = 60.0    # M_sun
@@ -109,8 +115,8 @@ print(f"Duration:  {mode22.duration:.3f} s")
 print(f"Peak amplitude: {abs(mode22).max():.3e}")
 ```
 
-`get_mode()` scales the amplitude by $G M_\text{tot} / (c^2 \cdot d_\text{Mpc} \cdot \text{Mpc})$
-and sets $t=0$ at the peak of the $(2,2)$ mode.
+`get_mode()` scales the amplitude by $$G M_\text{tot} / (c^2 \cdot d_\text{Mpc} \cdot \text{Mpc})$$
+and sets $$t=0$$ at the peak of the $$(2,2)$$ mode.
 
 ---
 
@@ -132,8 +138,8 @@ hc = -1 * pols.imag()  # h_cross  (negate because of package convention)
 ```
 
 > **Polarization sign convention**  
-> `get_td_waveform()` returns `conjugate(h)`, so `.real()` = $h_+$ and `.imag()` = $+h_\times$.
-> Multiply `.imag()` by $-1$ to match the LAL sign convention where $h_\times > 0$ for
+> `get_td_waveform()` returns `conjugate(h)`, so `.real()` = $$h_+$$ and `.imag()` = $$+h_\times$$.
+> Multiply `.imag()` by $$-1$$ to match the LAL sign convention where $$h_\times > 0$$ for
 > a face-on binary early in the inspiral.
 
 ---

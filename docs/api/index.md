@@ -1,6 +1,15 @@
+---
+title: API Reference
+nav_order: 8
+has_children: true
+has_toc: false
+---
+
 # API Reference
 
-Auto-generated from source docstrings via [mkdocstrings](https://mkdocstrings.github.io/).
+Generated from source docstrings by [`bin/generate_api_docs.py`](https://github.com/gwnrtools/nr-catalog-tools/blob/master/bin/generate_api_docs.py),
+which statically analyses the package with [griffe](https://mkdocstrings.github.io/griffe/)
+(no runtime imports, so heavy dependencies are not needed to build the docs).
 
 | Module | Description |
 |--------|-------------|
@@ -8,9 +17,13 @@ Auto-generated from source docstrings via [mkdocstrings](https://mkdocstrings.gi
 | [rit](rit.md) | `RITCatalog` and `RITCatalogHelper` for the RIT catalog |
 | [sxs](sxs.md) | `SXSCatalog` wrapping the `sxs` package |
 | [maya](maya.md) | `MayaCatalog` for the Georgia Tech MAYA catalog |
-| [waveform](waveform.md) | `WaveformModes` and matching/rotation helpers |
+| [waveform.modes](waveform_modes.md) | The central `WaveformModes` object |
+| [waveform.matching](waveform_matching.md) | Mode matching, rotation, and PSD helpers |
+| [waveform.loaders](waveform_loaders.md) | HDF5 / tar.gz loaders for `WaveformModes` |
+| [waveform.units](waveform_units.md) | Waveform-level constants |
 | [surrogate](surrogate.md) | NRSur7dq4 loading, evaluation, and prior check |
 | [comparisons](comparisons.md) | End-to-end NR vs surrogate comparison pipeline |
+| [classification](classification.md) | Spin/eccentricity classification of catalog simulations |
 | [metadata](metadata.md) | Cross-catalog key mappings and `get_source_parameters_from_metadata` |
 | [registry](registry.md) | Catalog plugin registry |
 | [lvc](lvc.md) | Frame-rotation helpers and LVCNR format utilities |
@@ -69,4 +82,14 @@ from nrcatalogtools.waveform.matching import (
 )
 
 from nrcatalogtools.comparisons import compare_sim_vs_surrogate, DELTA_T
+```
+
+## Regenerating these pages
+
+The per-module pages in this section are generated artifacts — do not edit them by
+hand. To refresh them after changing docstrings:
+
+```bash
+python bin/generate_api_docs.py          # rewrite docs/api/*.md
+python bin/generate_api_docs.py --check  # CI freshness check
 ```

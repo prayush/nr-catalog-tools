@@ -1,4 +1,18 @@
+---
+title: Package Internals
+nav_order: 9
+---
+
 # nr-catalog-tools: Package Overview
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
+---
 
 ## 1. Purpose and Scope
 
@@ -26,7 +40,7 @@ and `apply_wigner_rotation_to_mode_dict()` for rotating surrogate output into th
 
 **Cross-catalog accuracy studies.** Enables rigorous comparison of waveforms from independent
 NR codes via noise-weighted mismatch minimization over source-frame ambiguities — rotations
-$R \in SO(3)$, time translations $t_c$, phase offsets $\phi_c$, and BMS supertranslations.
+$$R \in SO(3)$$, time translations $$t_c$$, phase offsets $$\phi_c$$, and BMS supertranslations.
 See [goal.md](goal.md) for the full scientific formalism.
 
 ---
@@ -120,11 +134,11 @@ wfm = ritcat.get("RIT:BBH:0001-n100-id3", quantity="waveform")
 
 | Parameter | Column name |
 |-----------|-------------|
-| Mass ratio $m_1/m_2$ | `relaxed-mass-ratio-1-over-2` |
-| Spin $\chi_1$ (x component) | `relaxed-chi1x` |
-| Spin $\chi_1$ (y component) | `relaxed-chi1y` |
-| Spin $\chi_1$ (z component) | `relaxed-chi1z` |
-| Spin $\chi_2$ (x,y,z) | `relaxed-chi2x`, `relaxed-chi2y`, `relaxed-chi2z` |
+| Mass ratio $$m_1/m_2$$ | `relaxed-mass-ratio-1-over-2` |
+| Spin $$\chi_1$$ (x component) | `relaxed-chi1x` |
+| Spin $$\chi_1$$ (y component) | `relaxed-chi1y` |
+| Spin $$\chi_1$$ (z component) | `relaxed-chi1z` |
+| Spin $$\chi_2$$ (x,y,z) | `relaxed-chi2x`, `relaxed-chi2y`, `relaxed-chi2z` |
 | Eccentricity | `eccentricity` |
 | Relaxation time (dimless M) | `relaxed-time` |
 | Initial GW frequency (dimless) | `freq-start-22` |
@@ -150,10 +164,10 @@ wfm = sxscat.get("SXS:BBH:0001")     # uses sxs.load() internally
 | Parameter | Column name |
 |-----------|-------------|
 | Mass ratio | `reference_mass_ratio` |
-| Spin $\chi_1$ vector | `reference_dimensionless_spin1` (3-element list) |
-| Spin $\chi_2$ vector | `reference_dimensionless_spin2` (3-element list) |
-| Spin $\chi_1$ magnitude | `reference_chi1_mag` |
-| Spin $\chi_2$ magnitude | `reference_chi2_mag` |
+| Spin $$\chi_1$$ vector | `reference_dimensionless_spin1` (3-element list) |
+| Spin $$\chi_2$$ vector | `reference_dimensionless_spin2` (3-element list) |
+| Spin $$\chi_1$$ magnitude | `reference_chi1_mag` |
+| Spin $$\chi_2$$ magnitude | `reference_chi2_mag` |
 | Orbital frequency | `reference_orbital_frequency` (3-vector) |
 | Reference time (dimless) | `reference_time` |
 | Relaxation time (dimless) | `relaxation_time` |
@@ -179,11 +193,11 @@ wfm = mayacat.get("GT0001", quantity="waveform")
 
 | Parameter | Column name |
 |-----------|-------------|
-| Mass ratio $m_1/m_2$ | `q` |
-| Spin $\chi_1$ (x,y,z) | `a1x`, `a1y`, `a1z` |
-| Spin $\chi_2$ (x,y,z) | `a2x`, `a2y`, `a2z` |
+| Mass ratio $$m_1/m_2$$ | `q` |
+| Spin $$\chi_1$$ (x,y,z) | `a1x`, `a1y`, `a1z` |
+| Spin $$\chi_2$$ (x,y,z) | `a2x`, `a2y`, `a2z` |
 | Eccentricity | `eccentricity` |
-| Orbital frequency $M\Omega$ | `Momega` |
+| Orbital frequency $$M\Omega$$ | `Momega` |
 | GT simulation ID | `GTID` |
 
 ---
@@ -218,15 +232,15 @@ Three construction paths:
 
 | Property | Description |
 |----------|-------------|
-| `time` | 1-D array of dimensionless NR times (in units of $GM/c^3$) |
+| `time` | 1-D array of dimensionless NR times (in units of $$GM/c^3$$) |
 | `data` | Complex 2-D array, shape `(n_times, n_modes)` |
 | `LM` | List of `[ell, m]` pairs for each column in `data` |
-| `ell_min`, `ell_max` | Minimum and maximum $\ell$ values present |
+| `ell_min`, `ell_max` | Minimum and maximum $$\ell$$ values present |
 | `filepath` | Path to the source data file |
 | `sim_metadata` | The raw metadata dict (catalog-specific keys) |
 | `metadata` | Alias for `sim_metadata` |
 | `peak_time_22` | Dimensionless time of peak `|(2,2)| mode amplitude` (cached) |
-| `label` | LaTeX string summarizing $q$, $\chi_1$, $\chi_2$ (catalog-agnostic) |
+| `label` | LaTeX string summarizing $$q$$, $$\chi_1$$, $$\chi_2$$ (catalog-agnostic) |
 | `label_nolatex` | Plain-text version of the same label |
 
 ### 5.3 Core Methods
@@ -236,12 +250,12 @@ Returns the raw NR data for mode `(ell, em)` as a 2-column real array `[:, 0]` =
 
 #### `get_mode(ell, em, total_mass, distance, delta_t, to_pycbc=True)`
 The primary method for retrieving a physically-scaled mode. Returns a PyCBC `TimeSeries` (complex) with:
-- **Amplitude** scaled by $G M_\mathrm{tot} / (c^2 \cdot d)$ where $d$ is in Mpc
+- **Amplitude** scaled by $$G M_\mathrm{tot} / (c^2 \cdot d)$$ where $$d$$ is in Mpc
 - **Time** resampled to `delta_t` (see convention below)
-- **Epoch** set so that $t = 0$ coincides with the peak of the $(2,2)$ mode
+- **Epoch** set so that $$t = 0$$ coincides with the peak of the $$(2,2)$$ mode
 
 **`delta_t` convention:**
-- `delta_t > 1/128` → interpreted as **dimensionless M units** (NR native; e.g. `0.5` means $0.5\,GM/c^3$)
+- `delta_t > 1/128` → interpreted as **dimensionless M units** (NR native; e.g. `0.5` means $$0.5\,GM/c^3$$)
 - `delta_t ≤ 1/128` → interpreted as **physical seconds** (e.g. `1/4096` for detector-band data)
 
 The returned `TimeSeries.delta_t` is **always in physical seconds**.
@@ -254,7 +268,7 @@ f_hz = wfm.f_lower_at_1Msun(t=t_dimless) / total_mass_msun
 If `t=None`, returns the frequency at the start of the waveform.
 
 #### `get_td_waveform(total_mass, distance, inclination, coa_phase, delta_t)`
-Returns the sky-averaged strain $h_+ - ih_\times$ evaluated at the given inclination and coalescence phase, summed over all modes. Returns a complex PyCBC `TimeSeries`; `.real()` gives $h_+$, `.imag()` gives $h_\times$.
+Returns the sky-averaged strain $$h_+ - ih_\times$$ evaluated at the given inclination and coalescence phase, summed over all modes. Returns a complex PyCBC `TimeSeries`; `.real()` gives $$h_+$$, `.imag()` gives $$h_\times$$.
 
 **Polarization convention:** The function returns `conjugate(h)` to align with LAL conventions, meaning `real() = h_+` and `imag() = +h_\times` (note: LAL defines `imag() = -h_\times`; the conjugation effectively flips the sign).
 
@@ -265,10 +279,10 @@ Returns a slice of the waveform starting from the relaxation epoch. Reads `t_rel
 Returns the GW frequency (Hz) at the relaxation time for the given total mass.
 
 #### `match_sphere_averaged(other, psd, f_lower, delta_t, ...)`
-Compute the sky-averaged match between two `WaveformModes` objects. Optimizes over time shift, coalescence phase, and source-frame rotation $R \in SO(3)$ (parameterized by Euler angles $\alpha, \beta$).
+Compute the sky-averaged match between two `WaveformModes` objects. Optimizes over time shift, coalescence phase, and source-frame rotation $$R \in SO(3)$$ (parameterized by Euler angles $$\alpha, \beta$$).
 
 #### `match_sphere_averaged_bms_maximized(...)`
-Extended version of the above that additionally optimizes over BMS supertranslations $\alpha(\theta,\phi) = \sum_{jk} \alpha_{jk} Y_{jk}$ up to `l_max_alpha`. Uses spin-weighted Gaunt coefficients from the `scri` package to compute mode mixing.
+Extended version of the above that additionally optimizes over BMS supertranslations $$\alpha(\theta,\phi) = \sum_{jk} \alpha_{jk} Y_{jk}$$ up to `l_max_alpha`. Uses spin-weighted Gaunt coefficients from the `scri` package to compute mode mixing.
 
 ### 5.4 Rotation Methods (inherited from `sxs.WaveformModes`)
 
@@ -282,8 +296,8 @@ All internally stored NR data is in **geometrized, mass-scaled dimensionless uni
 
 | Quantity | Dimensionless unit |
 |----------|--------------------|
-| Time | $GM_\mathrm{tot}/c^3$ |
-| Amplitude ($r\,h_{\ell m}$) | $GM_\mathrm{tot}/c^2$ (i.e. $h_{\ell m}^{NR} = r\,c^2\,h_{\ell m} / (G M_\mathrm{tot})$) |
+| Time | $$GM_\mathrm{tot}/c^3$$ |
+| Amplitude ($$r\,h_{\ell m}$$) | $$GM_\mathrm{tot}/c^2$$ (i.e. $$h_{\ell m}^{NR} = r\,c^2\,h_{\ell m} / (G M_\mathrm{tot})$$) |
 
 **Conversion factors** (from `utils.py`):
 
@@ -297,7 +311,7 @@ amp_scale = lal.G_SI * total_mass * lal.MSUN_SI / (lal.C_SI**2 * distance_mpc * 
 ```
 
 **Cross-catalog validation (q=1, chi=0, M=60 M☉, d=100 Mpc):**
-All three catalogs agree to within ~0.75% on the peak amplitude of the $(2,2)$ mode and ~0.5% on the accumulated orbital phase in the last 0.1 s before merger, confirming consistent scaling across catalogs.
+All three catalogs agree to within ~0.75% on the peak amplitude of the $$(2,2)$$ mode and ~0.5% on the accumulated orbital phase in the last 0.1 s before merger, confirming consistent scaling across catalogs.
 
 ---
 
@@ -317,7 +331,7 @@ All three catalogs agree to within ~0.75% on the peak amplitude of the $(2,2)$ m
 ```
 f_lower [Hz] = f_dimless / (total_mass [M☉] × lal.MTSUN_SI)
 ```
-For SXS, the magnitude of `reference_orbital_frequency` (a 3-vector) is used as $M\Omega$; then $f_{GW} = M\Omega / \pi$.
+For SXS, the magnitude of `reference_orbital_frequency` (a 3-vector) is used as $$M\Omega$$; then $$f_{GW} = M\Omega / \pi$$.
 
 ---
 
@@ -353,7 +367,7 @@ Controlled by the `NR_CATALOG_CACHE` environment variable (defaults to `~/.cache
 | `pycbc` | `TimeSeries`, `match()`, `get_td_waveform_modes()`, `pnutils` |
 | `lal` / `lalsimulation` | Physical constants (`MTSUN_SI`, `MSUN_SI`, `G_SI`, `C_SI`, `PC_SI`) |
 | `h5py` | HDF5 file reading (RIT waveform files) |
-| `quaternionic` | Quaternion representation of $SO(3)$ rotations |
+| `quaternionic` | Quaternion representation of $$SO(3)$$ rotations |
 | `spherical` | Wigner D-matrix computation |
 | `scipy` | `InterpolatedUnivariateSpline` for mode resampling |
 | `scri` | Spin-weighted Gaunt coefficients (optional; needed for BMS optimization) |
@@ -473,7 +487,7 @@ compare_sim_vs_surrogate(
 |------|-------|-------------|
 | `SURROGATE_MODES` | `[(2,1),(2,2),(3,2),(3,3),(4,3),(4,4)]` | Modes output by NRSur7dq4 (ell ≤ 4, positive m only) |
 | `NR_MODES` | superset of above + `(5,5)` | Modes present in NR catalogs |
-| `_SURROGATE_F_MIN_CYCLES_PER_M` | `0.0165` | Minimum $M\Omega$ for NRSur7dq4 training |
+| `_SURROGATE_F_MIN_CYCLES_PER_M` | `0.0165` | Minimum $$M\Omega$$ for NRSur7dq4 training |
 
 ### `f_ref` clipping
 
@@ -527,4 +541,4 @@ interp, avail_ref_time = check_interp_req(h5_file, ref_time=t_ref)
 Passing `t_ref` as a positional second argument binds it to `metadata`, causing the interpolation check to never fire.
 
 ### Polarization convention
-`get_td_waveform()` returns `conjugate(h)` so that `.real()` gives $h_+$. This differs from LAL's convention where the imaginary part equals $-h_\times$. In this package, `.imag()` gives $+h_\times$.
+`get_td_waveform()` returns `conjugate(h)` so that `.real()` gives $$h_+$$. This differs from LAL's convention where the imaginary part equals $$-h_\times$$. In this package, `.imag()` gives $$+h_\times$$.
