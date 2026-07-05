@@ -160,9 +160,7 @@ def test_generate_surrogate_modes_returns_timeseries_per_mode():
     """Result should contain one complex TimeSeries per SURROGATE_MODE key."""
     params = _params(q=2.0, chi1z=0.3, chi2z=-0.2)
 
-    with patch(
-        "nrcats.surrogate.load_nrsur7dq4", return_value=_mock_surrogate()
-    ):
+    with patch("nrcats.surrogate.load_nrsur7dq4", return_value=_mock_surrogate()):
         result, f_lower_eff = generate_surrogate_modes(
             params, total_mass=60.0, distance=1.0, delta_t_seconds=1.0 / 4096
         )
@@ -178,9 +176,7 @@ def test_generate_surrogate_modes_epoch_at_h22_peak():
     """Epoch should be negative (t=0 at peak, waveform starts in the past)."""
     params = _params(q=1.5)
 
-    with patch(
-        "nrcats.surrogate.load_nrsur7dq4", return_value=_mock_surrogate()
-    ):
+    with patch("nrcats.surrogate.load_nrsur7dq4", return_value=_mock_surrogate()):
         result, _ = generate_surrogate_modes(params, total_mass=60.0)
 
     h22 = result[(2, 2)]

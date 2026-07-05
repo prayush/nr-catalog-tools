@@ -400,9 +400,7 @@ class TestGTPol(unittest.TestCase):
                     "-------------------------------------------------------",
                     message_verbosity=1,
                 )
-                message(
-                    f"Mismatches are nrcats - lal {mm_nl}%", message_verbosity=1
-                )
+                message(f"Mismatches are nrcats - lal {mm_nl}%", message_verbosity=1)
                 if test_wrt_wftools:
                     message("nrcats-wftools {mm_w3n}%", message_verbosity=1)
                 message(
