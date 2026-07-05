@@ -29,7 +29,7 @@ catalog works against all others without modification.
 ## Installation
 
 ```bash
-pip install nrcatalogtools
+pip install nrcats
 ```
 
 Dependencies: `sxs >= 2025.0.0`, `pycbc`, `lal`, `h5py`, `quaternionic`, `spherical`, `scipy`.
@@ -131,7 +131,7 @@ python bin/generate_api_docs.py
 # 2. Build and serve the site (needs Ruby >= 3.0)
 cd docs
 bundle install
-bundle exec jekyll serve      # http://127.0.0.1:4000/nr-catalog-tools/
+bundle exec jekyll serve      # http://127.0.0.1:4000/nrcats/
 ```
 
 The docs site is deployed automatically from `master` via GitHub Actions

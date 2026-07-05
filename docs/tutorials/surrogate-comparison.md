@@ -22,11 +22,11 @@ calibration and accuracy studies.
 ## Prerequisites
 
 ```bash
-pip install nr-catalog-tools gwsurrogate matplotlib
+pip install nrcats gwsurrogate matplotlib
 ```
 
 {: .note }
-> `gwsurrogate` is an optional dependency of `nr-catalog-tools`. The NRSur7dq4 model
+> `gwsurrogate` is an optional dependency of `nrcats`. The NRSur7dq4 model
 > data is downloaded automatically on first use. NRSur7dq4 is valid for mass ratios
 > $$q \le 4$$ and spin magnitudes $$|\chi_{1,2}| \le 0.8$$; use
 > [`check_surrogate_prior()`](../api/surrogate.md) before comparing.

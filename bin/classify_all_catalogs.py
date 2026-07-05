@@ -10,7 +10,7 @@ import sys
 import os
 import json
 
-# Ensure parent package can be found (bin/ is under nr-catalog-tools/)
+# Ensure parent package can be found (bin/ is under nrcats/)
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from nrcatalogtools import NRCatalogClassifier

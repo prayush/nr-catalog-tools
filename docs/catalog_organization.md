@@ -72,7 +72,7 @@ import json
 import os
 
 # 1. Resolve path to catalog_organization directory under the repository root
-base_dir = "/home/prayush/src/nr-catalog-tools" # replace with your repo root
+base_dir = "/home/prayush/src/nrcats" # replace with your repo root
 org_dir = os.path.join(base_dir, "catalog_organization")
 
 # -------------------------------------------------------------

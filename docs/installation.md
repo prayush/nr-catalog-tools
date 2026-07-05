@@ -27,7 +27,7 @@ sudo apt-get install libgsl-dev libfftw3-dev libhdf5-dev
 ## Install with pip
 
 ```bash
-pip install nr-catalog-tools
+pip install nrcats
 ```
 
 Or, for the latest development version:
@@ -43,7 +43,7 @@ that creates a complete environment (including `lalsuite` from conda-forge):
 
 ```bash
 git clone https://github.com/gwnrtools/nrcats.git
-cd nr-catalog-tools
+cd nrcats
 conda env create -f environment.yml
 conda activate nrcat
 ```

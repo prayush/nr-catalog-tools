@@ -1,4 +1,4 @@
-"""nr-catalog-tools: unified Python interface to NR BBH waveform catalogs.
+"""nrcats: unified Python interface to NR BBH waveform catalogs.
 
 Provides stable, PyCBC-compatible access to the SXS, RIT, and MAYA/GT
 numerical-relativity binary black-hole waveform catalogs for use in
@@ -159,6 +159,6 @@ __all__ = [
 try:
     from importlib.metadata import version as _pkg_version, PackageNotFoundError
 
-    __version__ = _pkg_version("nr-catalog-tools")
+    __version__ = _pkg_version("nrcats")
 except PackageNotFoundError:
     __version__ = "unknown"

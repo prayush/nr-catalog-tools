@@ -4,7 +4,7 @@ nav_order: 1
 permalink: /
 ---
 
-# nr-catalog-tools
+# nrcats
 {: .fs-9 }
 
 A stable, unified Python interface to public numerical-relativity (NR) binary black-hole
@@ -19,7 +19,7 @@ waveform catalogs — for LVK analyses, waveform modeling, and cross-catalog com
 
 ## What it does
 
-`nr-catalog-tools` serves three overlapping communities with one API:
+`nrcats` serves three overlapping communities with one API:
 
 - **LIGO-Virgo-KAGRA analyses** — reliable, PyCBC-compatible waveform time series and
   source-parameter dicts for parameter estimation, injection studies, and template bank

@@ -3,7 +3,7 @@ requires = ["setuptools>=64", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "nr-catalog-tools"
+name = "nrcats"
 dynamic = ["version"]
 description = "A collection of tools to interface with Numerical Relativity waveform catalogs"
 readme = "README.md"

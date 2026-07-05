@@ -18,7 +18,7 @@ nav_order: 11
 
 ```bash
 git clone https://github.com/gwnrtools/nrcats.git
-cd nr-catalog-tools
+cd nrcats
 
 # Option A: conda (recommended — ships lalsuite prebuilt)
 conda env create -f environment.yml
@@ -76,7 +76,7 @@ python bin/generate_api_docs.py
 # 2. Build/serve the site
 cd docs
 bundle install                       # first time only; needs Ruby >= 3.0
-bundle exec jekyll serve             # http://127.0.0.1:4000/nr-catalog-tools/
+bundle exec jekyll serve             # http://127.0.0.1:4000/nrcats/
 ```
 
 Conventions:

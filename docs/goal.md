@@ -15,7 +15,7 @@ nav_order: 10
 ---
 ## Package Goals and Scope
 
-`nr-catalog-tools` is designed to be a **stable, cohesive interface** to all publicly available
+`nrcats` is designed to be a **stable, cohesive interface** to all publicly available
 NR binary black-hole waveform catalogs. The scope is intentionally broad, serving three
 overlapping communities:
 
@@ -23,7 +23,7 @@ overlapping communities:
 
 Gravitational-wave detection and parameter estimation pipelines (PyCBC, LALInference, Bilby)
 require NR waveforms as injection signals, as validation targets, and as calibration references.
-`nr-catalog-tools` provides:
+`nrcats` provides:
 
 - A single `catalog.get(sim_name)` call that returns a PyCBC-compatible `TimeSeries` regardless
   of which NR code produced the simulation
