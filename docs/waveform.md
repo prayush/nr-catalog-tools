@@ -217,7 +217,6 @@ This method optimizes $$t_c$$, $$\phi_c$$, $$R \in SO(3)$$, and the supertransla
 
 > [!NOTE]
 > The `scri` package is required to compute the spin-weighted Gaunt coupling coefficients $$\mathcal{G}^{\ell m}_{jk,pq}$$.
-
 ---
 
 ## Unit conventions

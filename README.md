@@ -1,6 +1,6 @@
-[![Code coverage](https://gwnrtools.github.io/nr-catalog-tools/cov_badge.svg)](https://gwnrtools.github.io/nr-catalog-tools/)
+[![Code coverage](https://gwnrtools.github.io/nrcats/cov_badge.svg)](https://gwnrtools.github.io/nrcats/)
 
-# nr-catalog-tools
+# nrcats
 
 A stable, unified Python interface to public numerical-relativity (NR) binary black-hole
 waveform catalogs, built to serve a broad range of gravitational-wave science:
