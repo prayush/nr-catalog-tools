@@ -13,7 +13,7 @@ sky-averaged mismatch — the standard metric for quantifying NR waveform accura
 ## Prerequisites
 
 ```bash
-pip install nr-catalog-tools pycbc
+pip install nrcats pycbc
 ```
 
 ---

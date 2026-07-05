@@ -19,7 +19,7 @@ The even-m modes (2,2), (3,2), (4,4) are the physically meaningful ones to compa
 import os
 import sys
 
-sys.path.insert(0, "/home/prayush/src/nr-catalog-tools")
+sys.path.insert(0, "/home/prayush/src/nrcats")
 
 import warnings
 

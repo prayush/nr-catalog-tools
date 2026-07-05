@@ -1,5 +1,5 @@
 """
-pytest configuration for nr-catalog-tools tests.
+pytest configuration for nrcats tests.
 
 Markers
 -------

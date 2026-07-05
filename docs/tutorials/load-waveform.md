@@ -13,7 +13,7 @@ time-domain polarizations.
 ## Prerequisites
 
 ```bash
-pip install nr-catalog-tools matplotlib
+pip install nrcats matplotlib
 ```
 
 ---

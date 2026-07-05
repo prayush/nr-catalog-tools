@@ -171,7 +171,7 @@ def GetModesToCompare(ell, emm, Plot=False):
 #################################
 
 #######################################
-# Fetch waveform using nr-catalog-tools
+# Fetch waveform using nrcats
 #######################################
 
 # Module-level data loading — guarded so pytest can collect this file

@@ -3,7 +3,7 @@ title: Architecture
 nav_order: 7
 ---
 
-# `nr-catalog-tools` — Architectural Overview
+# `nrcats` — Architectural Overview
 {: .no_toc }
 
 ## Table of contents

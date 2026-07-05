@@ -3,7 +3,7 @@ title: Package Internals
 nav_order: 9
 ---
 
-# nr-catalog-tools: Package Overview
+# nrcats: Package Overview
 {: .no_toc }
 
 ## Table of contents
@@ -16,7 +16,7 @@ nav_order: 9
 
 ## 1. Purpose and Scope
 
-`nr-catalog-tools` provides a **stable, unified Python interface** to three publicly available
+`nrcats` provides a **stable, unified Python interface** to three publicly available
 NR binary black-hole (BBH) waveform catalogs, designed to serve a broad range of
 gravitational-wave research:
 
