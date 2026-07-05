@@ -13,7 +13,7 @@ waveform catalogs — for LVK analyses, waveform modeling, and cross-catalog com
 
 [Install](installation.md){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [Quick start](#quick-start){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
-[View on GitHub](https://github.com/gwnrtools/nr-catalog-tools){: .btn .fs-5 .mb-4 .mb-md-0 }
+[View on GitHub](https://github.com/gwnrtools/nrcats){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ---
 

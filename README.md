@@ -100,7 +100,7 @@ params = ritcat.get_parameters("RIT:BBH:0001-n100-id3", total_mass=60.0)
 
 ## Documentation
 
-Full documentation: **<https://gwnrtools.github.io/nr-catalog-tools/>**
+Full documentation: **<https://gwnrtools.github.io/nrcats/>**
 
 | Document | Description |
 |----------|-------------|

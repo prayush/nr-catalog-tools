@@ -17,7 +17,7 @@ nav_order: 11
 ## Development setup
 
 ```bash
-git clone https://github.com/gwnrtools/nr-catalog-tools.git
+git clone https://github.com/gwnrtools/nrcats.git
 cd nr-catalog-tools
 
 # Option A: conda (recommended — ships lalsuite prebuilt)

@@ -27,7 +27,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/gwnrtools/nr-catalog-tools"
+Homepage = "https://github.com/gwnrtools/nrcats"
 
 [project.optional-dependencies]
 # API-reference generation only; the site itself is built with Jekyll

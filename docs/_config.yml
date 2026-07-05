@@ -1,13 +1,13 @@
-# Jekyll + just-the-docs configuration for the nr-catalog-tools documentation site.
+# Jekyll + just-the-docs configuration for the nrcats documentation site.
 # Built and deployed by .github/workflows/docs.yml; see README.md for local builds.
 
-title: nr-catalog-tools
+title: nrcats
 description: >-
   A stable, unified Python interface to NR binary black-hole waveform catalogs
   for LVK analyses, waveform modeling, and cross-catalog comparison.
 url: https://gwnrtools.github.io
-baseurl: /nr-catalog-tools
-repository: gwnrtools/nr-catalog-tools
+baseurl: /nrcats
+repository: gwnrtools/nrcats
 
 theme: just-the-docs
 
@@ -41,7 +41,7 @@ search:
 heading_anchors: true
 
 aux_links:
-  nr-catalog-tools on GitHub: https://github.com/gwnrtools/nr-catalog-tools
+  nrcats on GitHub: https://github.com/gwnrtools/nrcats
 aux_links_new_tab: true
 
 nav_enabled: true
@@ -62,8 +62,8 @@ callouts:
 
 # Footer
 footer_content: >-
-  Copyright &copy; the nr-catalog-tools developers.
-  Distributed under the <a href="https://github.com/gwnrtools/nr-catalog-tools/blob/master/LICENSE">GPL license</a>.
+  Copyright &copy; the nrcats developers.
+  Distributed under the <a href="https://github.com/gwnrtools/nrcats/blob/master/LICENSE">GPL license</a>.
 
 # ── kramdown ────────────────────────────────────────────────────────────────
 # math_engine mathjax: kramdown extracts $$...$$ spans/blocks and emits
