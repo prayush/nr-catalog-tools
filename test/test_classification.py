@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from nrcatalogtools import NRCatalogClassifier
+from nrcats import NRCatalogClassifier
 
 
 def test_classifier_initialization_defaults():

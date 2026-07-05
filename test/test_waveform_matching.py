@@ -1,4 +1,4 @@
-"""Unit tests for the per-mode match helpers in nrcatalogtools.waveform.matching."""
+"""Unit tests for the per-mode match helpers in nrcats.waveform.matching."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from pycbc.types import FrequencySeries, TimeSeries
 
-from nrcatalogtools.waveform.matching import (
+from nrcats.waveform.matching import (
     compute_mode_match,
     compute_phase_diff_per_cycle,
     load_psd,

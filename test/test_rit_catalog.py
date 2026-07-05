@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-import nrcatalogtools.rit as rit_module
+import nrcats.rit as rit_module
 
 
 def test_rit_singleton_returned_on_download_false():
@@ -46,7 +46,7 @@ def test_rit_load_download_true_replaces_singleton():
 
     try:
         rit_module._rit_catalog_singleton = sentinel
-        with patch("nrcatalogtools.rit.RITCatalogHelper", return_value=fake_helper):
+        with patch("nrcats.rit.RITCatalogHelper", return_value=fake_helper):
             # Patch __init__ so cls(catalog=...) doesn't touch the filesystem.
             with patch.object(rit_module.RITCatalog, "__init__", return_value=None):
                 result = rit_module.RITCatalog.load(download=True)

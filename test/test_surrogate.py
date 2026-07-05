@@ -1,4 +1,4 @@
-"""Unit tests for nrcatalogtools.surrogate."""
+"""Unit tests for nrcats.surrogate."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from pycbc.types import TimeSeries
 
-from nrcatalogtools.surrogate import (
+from nrcats.surrogate import (
     NR_MODES,
     SURROGATE_MODES,
     check_surrogate_prior,
@@ -138,7 +138,7 @@ def test_modes_are_positive_m_only():
 
 def test_load_nrsur7dq4_caches_singleton():
     """gwsurrogate.LoadSurrogate must be called exactly once regardless of call count."""
-    import nrcatalogtools.surrogate as _sur_mod
+    import nrcats.surrogate as _sur_mod
 
     mock_sur = MagicMock()
     mock_gws = MagicMock()
@@ -161,7 +161,7 @@ def test_generate_surrogate_modes_returns_timeseries_per_mode():
     params = _params(q=2.0, chi1z=0.3, chi2z=-0.2)
 
     with patch(
-        "nrcatalogtools.surrogate.load_nrsur7dq4", return_value=_mock_surrogate()
+        "nrcats.surrogate.load_nrsur7dq4", return_value=_mock_surrogate()
     ):
         result, f_lower_eff = generate_surrogate_modes(
             params, total_mass=60.0, distance=1.0, delta_t_seconds=1.0 / 4096
@@ -179,7 +179,7 @@ def test_generate_surrogate_modes_epoch_at_h22_peak():
     params = _params(q=1.5)
 
     with patch(
-        "nrcatalogtools.surrogate.load_nrsur7dq4", return_value=_mock_surrogate()
+        "nrcats.surrogate.load_nrsur7dq4", return_value=_mock_surrogate()
     ):
         result, _ = generate_surrogate_modes(params, total_mass=60.0)
 
@@ -190,7 +190,7 @@ def test_generate_surrogate_modes_epoch_at_h22_peak():
 
 def test_generate_surrogate_modes_negative_f_lower_raises():
     params = _params(f_lower=-5.0)
-    with patch("nrcatalogtools.surrogate.load_nrsur7dq4", return_value=MagicMock()):
+    with patch("nrcats.surrogate.load_nrsur7dq4", return_value=MagicMock()):
         with pytest.raises(ValueError, match="not positive"):
             generate_surrogate_modes(params, total_mass=60.0)
 
@@ -216,7 +216,7 @@ def test_generate_surrogate_modes_clips_f_ref_on_omega_error():
 
     mock_sur.side_effect = _side_effect
 
-    with patch("nrcatalogtools.surrogate.load_nrsur7dq4", return_value=mock_sur):
+    with patch("nrcats.surrogate.load_nrsur7dq4", return_value=mock_sur):
         result, _ = generate_surrogate_modes(params, total_mass=60.0)
 
     assert (

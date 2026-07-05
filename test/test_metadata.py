@@ -2,7 +2,7 @@
 
 import pytest
 
-from nrcatalogtools.metadata import get_source_parameters_from_metadata
+from nrcats.metadata import get_source_parameters_from_metadata
 
 
 def test_missing_catalog_type_raises_value_error():

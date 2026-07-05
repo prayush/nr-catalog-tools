@@ -26,7 +26,7 @@ if libpath not in sys.path:
 import unittest
 from pathlib import Path
 
-from nrcatalogtools.sxs import SXSCatalog
+from nrcats.sxs import SXSCatalog
 from pycbc.filter.matchedfilter import match
 from pycbc.types.timeseries import TimeSeries
 
@@ -193,7 +193,7 @@ try:
 
     # sc = sxs.Catalog.load(download=True)
     # rc = RITCatalog.load(verbosity=5, download=True)
-    message("Loading SXS waveform through nrcatalogtools...")
+    message("Loading SXS waveform through nrcats...")
 
     sxs1 = SXSCatalog.load(download=False)
     # mc = MayaCatalog.load(verbosity=5)

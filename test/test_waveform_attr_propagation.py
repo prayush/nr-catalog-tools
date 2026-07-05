@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 import quaternionic
 
-from nrcatalogtools.waveform import WaveformModes
+from nrcats.waveform import WaveformModes
 
 
 # ---------------------------------------------------------------------------
