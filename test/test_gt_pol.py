@@ -1,5 +1,5 @@
 """Test the generation of observer polarizations
-of nrcatalogtools against lal and waveformtools
+of nrcats against lal and waveformtools
 using GT waveforms.
 """
 
@@ -22,9 +22,9 @@ if libpath not in sys.path:
 import unittest
 from pathlib import Path
 
-from nrcatalogtools.maya import MayaCatalog
+from nrcats.maya import MayaCatalog
 from pycbc import pnutils
-from nrcatalogtools.lvc import transform_spins_nr_to_lal
+from nrcats.lvc import transform_spins_nr_to_lal
 
 from pycbc.filter.matchedfilter import match
 
@@ -82,7 +82,7 @@ test_wrt_wftools = False
 
 def GetPolsToCompare(sim_name, total_mass, distance, inclination, coa_phase, delta_t):
     """Get polarization time-series to compare from
-    nrcatalogtools, waveformtools and lal methods.
+    nrcats, waveformtools and lal methods.
 
     Parameters
     ----------
@@ -103,7 +103,7 @@ def GetPolsToCompare(sim_name, total_mass, distance, inclination, coa_phase, del
     Returns
     -------
     waveforms : dict
-                The waveform polarizations from nrcatalogtools,
+                The waveform polarizations from nrcats,
                 waveformtools and lal.
     """
     mc = MayaCatalog.load(verbosity=1, download=False)
@@ -314,7 +314,7 @@ class TestGTPol(unittest.TestCase):
     """Test the computation of polarizattions"""
 
     def test_pol(self):
-        """Test the computations of GT waveforms from nrcatalogtools
+        """Test the computations of GT waveforms from nrcats
         against  waveformtools and lal. Tested are RMS errors, maximum deviation and mismatches.
         """
         validation_file = _VALIDATION_DIR / f"{sim_name}.h5"
@@ -401,10 +401,10 @@ class TestGTPol(unittest.TestCase):
                     message_verbosity=1,
                 )
                 message(
-                    f"Mismatches are nrcatalogtools - lal {mm_nl}%", message_verbosity=1
+                    f"Mismatches are nrcats - lal {mm_nl}%", message_verbosity=1
                 )
                 if test_wrt_wftools:
-                    message("nrcatalogtools-wftools {mm_w3n}%", message_verbosity=1)
+                    message("nrcats-wftools {mm_w3n}%", message_verbosity=1)
                 message(
                     "-------------------------------------------------------",
                     message_verbosity=1,
@@ -450,7 +450,7 @@ class TestGTPol(unittest.TestCase):
                     np.array(wf_n),
                     np.array(wf_l),
                     prec,
-                    f"The arrays (nrcatalogtools, lal) must equal atleast upto {prec} decimals",
+                    f"The arrays (nrcats, lal) must equal atleast upto {prec} decimals",
                 )
 
                 if test_wrt_wftools is True:
@@ -492,7 +492,7 @@ class TestGTPol(unittest.TestCase):
                         np.array(wf_n),
                         np.array(wf_w3),
                         prec,
-                        f"The arrays (nrcatalogtools, waveformtools) must equal atleast upto {prec} decimals",
+                        f"The arrays (nrcats, waveformtools) must equal atleast upto {prec} decimals",
                     )
 
         max_mm = max(all_mm)

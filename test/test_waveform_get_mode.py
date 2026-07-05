@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import quaternionic
 
-from nrcatalogtools.waveform import WaveformModes
+from nrcats.waveform import WaveformModes
 
 
 def _make_minimal_wfm(n_times=500, dt=1.0):

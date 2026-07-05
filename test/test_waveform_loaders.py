@@ -7,7 +7,7 @@ import warnings
 import numpy as np
 import pytest
 
-from nrcatalogtools.waveform import WaveformModes
+from nrcats.waveform import WaveformModes
 
 
 def _make_targz(path, basename, modes, times):
@@ -74,7 +74,7 @@ def test_load_from_targz_present_modes_excludes_zero_padded(tmp_path):
 
 def test_load_from_targz_no_warning_when_all_modes_present(tmp_path):
     """No UserWarning when every mode from ell=2 to ell_max is in the archive."""
-    from nrcatalogtools.waveform.units import ELL_MIN, ELL_MAX
+    from nrcats.waveform.units import ELL_MIN, ELL_MAX
 
     basename = "ExtrapPsi4_RIT-BBH-0003-n100"
     times = np.linspace(0, 50, 51)

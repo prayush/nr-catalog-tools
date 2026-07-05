@@ -67,9 +67,9 @@ ODD_MODE_TOL = 0.05  # odd-m mode peak must be < 5% of (2,2) peak
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 def _try_import():
-    """Return nrcatalogtools, or None if unavailable."""
+    """Return nrcats, or None if unavailable."""
     try:
-        import nrcatalogtools as nrcat
+        import nrcats as nrcat
 
         return nrcat
     except ImportError:
@@ -178,7 +178,7 @@ class TestAmplitudeScaling:
     """The physical amplitude of get_mode() must equal raw_amplitude × amp_to_physical(M, d)."""
 
     def _check(self, wfm, label):
-        from nrcatalogtools import utils
+        from nrcats import utils
 
         scale = utils.amp_to_physical(TOTAL_MASS, DISTANCE)
 
@@ -303,7 +303,7 @@ class TestParameterExtraction:
         """cat_getter() returns the catalog; we call get_parameters on it."""
         nrcat = _try_import()
         if nrcat is None:
-            pytest.skip("nrcatalogtools not importable")
+            pytest.skip("nrcats not importable")
 
         cat = cat_getter()
         params = cat.get_parameters(sim_name, total_mass=TOTAL_MASS)
@@ -344,7 +344,7 @@ class TestParameterExtraction:
     def test_rit(self):
         nrcat = _try_import()
         if nrcat is None:
-            pytest.skip("nrcatalogtools not importable")
+            pytest.skip("nrcats not importable")
         try:
             cat = nrcat.RITCatalog.load(download=False, verbosity=0)
         except Exception:
@@ -354,7 +354,7 @@ class TestParameterExtraction:
     def test_sxs(self):
         nrcat = _try_import()
         if nrcat is None:
-            pytest.skip("nrcatalogtools not importable")
+            pytest.skip("nrcats not importable")
         try:
             cat = nrcat.SXSCatalog.load(download=False, verbosity=0)
         except Exception:
@@ -364,7 +364,7 @@ class TestParameterExtraction:
     def test_maya(self):
         nrcat = _try_import()
         if nrcat is None:
-            pytest.skip("nrcatalogtools not importable")
+            pytest.skip("nrcats not importable")
         try:
             cat = nrcat.MayaCatalog.load(verbosity=0)
         except Exception:

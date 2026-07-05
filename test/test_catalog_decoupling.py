@@ -9,8 +9,8 @@ from unittest.mock import MagicMock
 import pytest
 import sxs
 
-import nrcatalogtools as nrcat
-from nrcatalogtools.catalog import CatalogBase
+import nrcats as nrcat
+from nrcats.catalog import CatalogBase
 
 _HAS_SXS_SIMULATIONS = hasattr(sxs, "Simulations")
 

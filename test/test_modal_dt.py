@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from nrcatalogtools.waveform.units import _modal_dt
+from nrcats.waveform.units import _modal_dt
 
 
 def test_modal_dt_uniform_grid():

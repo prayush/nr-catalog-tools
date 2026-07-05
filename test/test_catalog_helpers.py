@@ -1,4 +1,4 @@
-"""Unit tests for load_catalog() and filter_by_surrogate_prior() in nrcatalogtools."""
+"""Unit tests for load_catalog() and filter_by_surrogate_prior() in nrcats."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-import nrcatalogtools as nrcat
+import nrcats as nrcat
 
 
 # ── load_catalog ──────────────────────────────────────────────────────────────
