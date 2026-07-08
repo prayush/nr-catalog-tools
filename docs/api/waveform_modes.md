@@ -406,6 +406,39 @@ Rotate the waveform modes.
 
 ---
 
+### `rotate_frame`
+
+```python
+rotate_frame(R)
+```
+
+Alias for `rotated(R)` for coordinate transform naming consistency.
+
+---
+
+### `align_to_j_frame`
+
+```python
+align_to_j_frame(J_vector)
+```
+
+Rotate the waveform modes such that the given angular momentum vector
+is aligned with the z-axis.
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| `J_vector` | `array_like` | A 3D vector representing the angular momentum [Jx, Jy, Jz]. |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+|  | `WaveformModes` | A new WaveformModes object rotated to the J-frame. |
+
+---
+
 ### `match_single_mode`
 
 ```python
