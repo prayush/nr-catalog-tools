@@ -844,6 +844,50 @@ class WaveformModes(sxs_WaveformModes):
         rotated_self.frame = R * self.frame
         return rotated_self
 
+    def rotate_frame(self, R):
+        """Alias for `rotated(R)` for coordinate transform naming consistency."""
+        return self.rotated(R)
+
+    def align_to_j_frame(self, J_vector):
+        """Rotate the waveform modes such that the given angular momentum vector
+        is aligned with the z-axis.
+
+        Parameters
+        ----------
+        J_vector : array_like
+            A 3D vector representing the angular momentum [Jx, Jy, Jz].
+
+        Returns
+        -------
+        WaveformModes
+            A new WaveformModes object rotated to the J-frame.
+        """
+        import numpy as np
+        import quaternionic
+
+        J = np.array(J_vector, dtype=float)
+        norm_J = np.linalg.norm(J)
+        if norm_J == 0:
+            return self.copy()
+
+        J_hat = J / norm_J
+        z_hat = np.array([0.0, 0.0, 1.0])
+
+        if np.allclose(J_hat, z_hat):
+            return self.copy()
+        elif np.allclose(J_hat, -z_hat):
+            R = quaternionic.array.from_axis_angle(np.pi * np.array([1.0, 0.0, 0.0]))
+            return self.rotated(R)
+
+        axis = np.cross(J_hat, z_hat)
+        axis_norm = np.linalg.norm(axis)
+        axis_hat = axis / axis_norm
+
+        angle = np.arccos(np.clip(np.dot(J_hat, z_hat), -1.0, 1.0))
+        R = quaternionic.array.from_axis_angle(angle * axis_hat)
+
+        return self.rotated(R)
+
     def match_single_mode(
         self,
         other,
