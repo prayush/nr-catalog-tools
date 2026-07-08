@@ -7,8 +7,8 @@ lalsuite
 ligo-common
 pycbc
 pandas
-sxs>=v2023.0.0
+sxs>=2025.0.0
 waveformtools
-mayawaves
+mayawaves>=2025.12
 numpy
 h5py
