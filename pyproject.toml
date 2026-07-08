@@ -20,9 +20,9 @@ dependencies = [
     "ligo-common",
     "pycbc",
     "pandas",
-    "sxs>=2023.0.0",
+    "sxs>=2025.0.0",
     "waveformtools",
-    "mayawaves",
+    "mayawaves>=2025.12",
     "h5py",
 ]
 
