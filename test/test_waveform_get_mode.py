@@ -26,6 +26,7 @@ def _make_minimal_wfm(n_times=500, dt=1.0):
 
     w_attributes = {
         "_filepath": "",
+        "_t_ref_nr": 0.0,
         "metadata": {"catalog_type": "RIT"},
         "history": "",
         "frame": quaternionic.array([[1.0, 0.0, 0.0, 0.0]]),
@@ -79,3 +80,78 @@ def test_get_mode_delta_t_seconds_and_msun_produce_different_lengths():
     h_secs = wfm.get_mode(2, 2, total_mass=total_mass, delta_t_seconds=1.0 / 4096)
     h_msun = wfm.get_mode(2, 2, total_mass=total_mass, delta_t_Msun=1.0 / 4096)
     assert len(h_secs) != len(h_msun)
+
+
+def test_get_td_waveform_both_delta_t_params_raises_value_error():
+    """Passing both delta_t_seconds and delta_t_Msun must raise ValueError in get_td_waveform."""
+    wfm = _make_minimal_wfm()
+    wfm.get_angles = lambda *args, **kwargs: {
+        "theta": 0.0,
+        "phi": 0.0,
+        "psi": 0.0,
+        "alpha": 0.0,
+        "t_ref": 0.0,
+        "f_ref": 0.0,
+    }
+    with pytest.raises(ValueError, match="only one"):
+        wfm.get_td_waveform(
+            total_mass=100.0,
+            distance=100.0,
+            inclination=0.0,
+            coa_phase=0.0,
+            delta_t_seconds=1.0 / 4096,
+            delta_t_Msun=0.5,
+        )
+
+
+def test_get_td_waveform_deprecated_delta_t_issues_warning():
+    """The legacy delta_t keyword must trigger a DeprecationWarning in get_td_waveform."""
+    wfm = _make_minimal_wfm(n_times=500, dt=1.0)
+    wfm.get_angles = lambda *args, **kwargs: {
+        "theta": 0.0,
+        "phi": 0.0,
+        "psi": 0.0,
+        "alpha": 0.0,
+        "t_ref": 0.0,
+        "f_ref": 0.0,
+    }
+    with pytest.warns(DeprecationWarning, match="deprecated"):
+        wfm.get_td_waveform(
+            total_mass=100.0,
+            distance=100.0,
+            inclination=0.0,
+            coa_phase=0.0,
+            delta_t=1.0 / 4096,
+        )
+
+
+@pytest.mark.requires_data
+def test_get_td_waveform_basic_generation():
+    """Test that get_td_waveform successfully generates a TimeSeries."""
+    wfm = _make_minimal_wfm(n_times=500, dt=1.0)
+    wfm.get_angles = lambda *args, **kwargs: {
+        "theta": 0.0,
+        "phi": 0.0,
+        "psi": 0.0,
+        "alpha": 0.0,
+        "t_ref": 0.0,
+        "f_ref": 0.0,
+    }
+
+    # We ignore the DeprecationWarning if we pass delta_t_seconds explicitly
+    # But get_td_waveform might warn if internal code still uses deprecated arguments,
+    # though it shouldn't if we use delta_t_seconds.
+    h = wfm.get_td_waveform(
+        total_mass=50.0,
+        distance=100.0,
+        inclination=0.0,
+        coa_phase=0.0,
+        delta_t_seconds=1.0 / 4096,
+    )
+
+    assert h is not None
+    assert len(h) > 0
+    import pycbc.types
+
+    assert isinstance(h, pycbc.types.TimeSeries)
+    assert h.dtype == complex
